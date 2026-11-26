@@ -1,165 +1,250 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mess Manager</title>
 <style>
-body{font-family:system-ui,sans-serif;margin:0;background:#f3f5f4;color:#1b2b24}
-header{background:#14705a;color:#fff;padding:12px 14px;font-weight:600}
-#tabs{display:flex;gap:6px;overflow-x:auto;padding:8px;background:#fff;position:sticky;top:0}
-#tabs button{white-space:nowrap;border:1px solid #14705a;background:#fff;color:#14705a;border-radius:16px;padding:6px 12px}
-#tabs button.on{background:#14705a;color:#fff}
-.c{background:#fff;border-radius:10px;margin:10px;padding:12px;box-shadow:0 1px 3px #0002}
-label{display:block;margin:8px 0 3px;font-size:13px;color:#456}
-input,select{width:100%;box-sizing:border-box;padding:9px;font-size:16px;border:1px solid #bbb;border-radius:6px}
-button.p{background:#14705a;color:#fff;border:0;border-radius:6px;padding:10px 16px;font-size:16px;margin:10px 6px 0 0}
-button.g{background:#eee;border:0;border-radius:6px;padding:10px 16px;font-size:16px;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:5px;border-bottom:1px solid #eee;text-align:left}
-.pos{color:#0a7a3b;font-weight:700}.neg{color:#c0392b;font-weight:700}.sm{font-size:12px;color:#678}
-@media print{#tabs,header,button{display:none}}
+:root{--g:#0f766e;--g2:#115e59;--bg:#eef3f2;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--r:#dc2626;--ok:#16a34a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);-webkit-tap-highlight-color:transparent}
+.bar{background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.bar b{font-size:18px}.bar small{opacity:.85;display:block;font-size:12px}
+.bar button{background:#ffffff26;color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:13px}
+#load{display:none;position:fixed;inset:0;background:#0f172a73;z-index:20;align-items:center;justify-content:center}
+#load .box{background:#fff;border-radius:16px;padding:24px 30px;text-align:center;box-shadow:0 8px 30px #0003;min-width:200px}
+#load .spin{width:46px;height:46px;border:5px solid #ccfbf1;border-top-color:var(--g);border-radius:50%;margin:0 auto 14px;animation:sp .8s linear infinite}
+#load b{display:block;font-size:17px}#load small{display:block;color:var(--m);margin-top:6px;font-size:13px;min-height:16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:#fff;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:5}
+#tabs button{white-space:nowrap;border:1px solid var(--b);background:#f8fafc;color:#334155;border-radius:20px;padding:8px 14px;font-size:14px}
+#tabs button.on{background:var(--g);border-color:var(--g);color:#fff;font-weight:600}
+.wrap{max-width:560px;margin:0 auto;padding:12px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px #0f172a14}
+h2{margin:0 0 4px;font-size:19px}h3{margin:0 0 10px;font-size:16px}
+.sub{color:var(--m);font-size:13px;margin:0 0 8px}
+label{display:block;margin:12px 0 5px;font-size:13px;font-weight:600;color:#334155}
+.hint{font-weight:400;color:var(--m);font-size:12px;margin-top:3px}
+input,select{width:100%;padding:11px;font-size:16px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+input:focus,select:focus{outline:2px solid #5eead4;border-color:var(--g)}
+.btn{width:100%;background:var(--g);color:#fff;border:0;border-radius:10px;padding:13px;font-size:16px;font-weight:600;margin-top:16px}
+.btn.sec{background:#e2e8f0;color:#1e293b}.btn.red{background:var(--r)}.btn.sm{width:auto;padding:8px 14px;font-size:14px;margin:0}
+.link{background:none;border:0;color:var(--g);font-size:14px;margin-top:14px;width:100%;padding:6px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#f1f5f9;border-radius:12px;padding:12px}.tile span{font-size:12px;color:var(--m)}.tile b{display:block;font-size:20px;margin-top:2px}
+.banner{border-radius:12px;padding:14px;margin:12px 0;font-weight:600}
+.banner.pos{background:#dcfce7;color:#166534}.banner.neg{background:#fee2e2;color:#991b1b}.banner b{font-size:22px;display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;border-bottom:1px solid var(--b);text-align:left;vertical-align:top}th{color:var(--m);font-weight:600;font-size:12px}td:last-child,th:last-child{text-align:right}
+.row{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px solid var(--b);cursor:pointer}
+.row:last-child{border:0}.row small{color:var(--m);display:block}
+.badge{border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;white-space:nowrap}
+.badge.pos{background:#dcfce7;color:#166534}.badge.neg{background:#fee2e2;color:#991b1b}
+.flex{display:flex;gap:8px;align-items:center}.flex>*{flex:1}
+.empty{text-align:center;color:var(--m);padding:26px 10px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:10;max-width:90%}
+#toast.show{opacity:1;transform:translateX(-50%)}#toast.bad{background:var(--r)}
+@media print{#tabs,.bar,button,#toast{display:none!important}}
 </style></head><body>
-<header id="h">Mess Hishab</header>
-<div id="tabs"></div><div id="v"></div>
+<div id="load"><div class="box"><div class="spin"></div><b id="lmsg">Loading...</b><small id="lsub"></small></div></div>
+<div class="bar"><div><b id="title">Mess Manager</b><small id="me"></small></div><button id="out" style="display:none" onclick="location.reload()">Log out</button></div>
+<div id="tabs" style="display:none"></div>
+<div class="wrap" id="v"><div class="empty">Loading...</div></div>
+<div id="toast"></div>
 <script>
-const $ = s => document.querySelector(s);
 const API = 'https://script.google.com/macros/s/AKfycbw_7rSc5kXsMjST6UexZniTrtwUeBWr_XBin1j_DrAP4Z6m33zbu_4kTcOoMVgTynVcjQ/exec';
-const run = (fn, ...a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error); return j.data; });
+const $ = s => document.querySelector(s);
+let busy = 0, slow;
+const load = (d, msg) => {
+  busy += d; const el = $('#load');
+  if (busy > 0) { if (msg) $('#lmsg').textContent = msg; $('#lsub').textContent = ''; el.style.display = 'flex';
+    clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'Still working, please wait...', 4000); }
+  else { clearTimeout(slow); el.style.display = 'none'; }
+};
+const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...'};
+const run = (fn, ...a) => { load(1, MSG[fn] || (fn === 'mgr' && a[2] !== 'lists' ? 'Saving...' : 'Loading...')); return fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json())
+  .then(j => { if (!j.ok) throw new Error(j.error); return j.data; })
+  .catch(e => { throw new Error(/fetch/i.test(e.message) ? 'No internet connection. Please try again.' : e.message); })
+  .finally(() => load(-1)); };
+const toast = (m, bad) => { const t = $('#toast'); t.textContent = m; t.className = (bad ? 'bad ' : '') + 'show'; clearTimeout(window._t); window._t = setTimeout(() => t.className = bad ? 'bad' : '', 3200); };
+const err = e => toast(e.message, 1);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const f = x => (Math.round(x * 100) / 100).toLocaleString('en-US');
+const tk = x => '৳' + f(x);
 const SH = {L: 'Lunch', D: 'Dinner'};
-let U, P, ROLE, I, TAB;
+const wrap = h => { $('#v').innerHTML = h; window.scrollTo(0, 0); };
+let U, P, ROLE, I, NAMES = [], D, LM;
 
-const FORMS = {
-  off: ['Meal Off', [['offDate','Meal off shuru (tarikh)','date'],['offShift','Kon bela theke off','shift'],['onDate','Abar meal on (tarikh) - na jani thakle khali rakhun','date?'],['onShift','Kon bela theke on','shift']]],
-  guest: ['Guest Meal', [['date','Tarikh','date'],['shift','Bela','shift'],['count','Koyjon guest','number']]],
-  baz: ['Bazar Entry', [['date','Tarikh','date'],['amount','Koto taka','number'],['items','Ki ki kena (optional)','text']]],
-  dep: ['Deposit Entry (Manager)', [['date','Tarikh','date'],['amount','Koto taka joma','number'],['note','Note (optional)','text']]]
-};
-
+// ---------- start / login / sign up ----------
 function start() {
-  run('init').then(d => {
-    I = d; $('#h').textContent = d.mess;
-    $('#v').innerHTML = `<div class="c"><label>Apnar naam</label><select id="u"><option value="__manager">-- Manager --</option>${d.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <label>4-digit PIN</label><input id="p" type="password" inputmode="numeric" maxlength="4"><button class="p" onclick="login()">Login</button></div>`;
-  }).catch(e => alert(e.message));
+  run('init').then(d => { I = d; $('#title').textContent = d.mess; showLogin(); })
+    .catch(e => wrap(`<div class="card empty">${esc(e.message)}<button class="btn" onclick="start()">Try again</button></div>`));
+}
+function showLogin() {
+  wrap(`<div class="card"><h2>Welcome</h2><p class="sub">Log in to continue</p>
+  <label>Your name</label><select id="u"><option value="__manager">Manager</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <label>4-digit PIN</label><input id="p" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  <button class="btn" onclick="login()">Log in</button>
+  <button class="link" onclick="showSignup()">New member? Create an account</button></div>`);
 }
 function login() {
   U = $('#u').value; P = $('#p').value;
-  run('login', U, P).then(r => { ROLE = r; buildTabs(); go(ROLE === 'M' ? 'dep' : 'off'); }).catch(e => alert(e.message));
+  if (!/^\d{4}$/.test(P)) return toast('Please enter your 4-digit PIN', 1);
+  run('login', U, P).then(async r => {
+    ROLE = r; $('#me').textContent = r === 'M' ? 'Manager' : U; $('#out').style.display = '';
+    if (r === 'M') I = await run('init');
+    buildTabs(); go('rep');
+  }).catch(err);
 }
+function showSignup() {
+  wrap(`<div class="card"><h2>Create account</h2><p class="sub">The manager will approve your request.</p>
+  <label>Full name</label><input id="sn" placeholder="e.g. Rahim Uddin">
+  <label>Choose a 4-digit PIN<div class="hint">এই PIN দিয়ে আপনি লগইন করবেন। যেমন: 4821</div></label><input id="sp" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  <button class="btn" onclick="signReview()">Continue</button><button class="link" onclick="showLogin()">Back to log in</button></div>`);
+}
+function signReview() {
+  const n = $('#sn').value.trim(), p = $('#sp').value;
+  if (n.length < 2) return toast('Please enter your name', 1);
+  if (!/^\d{4}$/.test(p)) return toast('PIN must be 4 digits', 1);
+  wrap(`<div class="card"><h3>Please check your details</h3><table><tr><td>Name</td><td><b>${esc(n)}</b></td></tr><tr><td>PIN</td><td><b>${esc(p)}</b></td></tr></table>
+  <button class="btn" id="sc">Confirm and send request</button><button class="btn sec" onclick="showSignup()">Edit</button></div>`);
+  $('#sc').onclick = () => run('signup', n, p).then(() => wrap(`<div class="card empty"><h2>Request sent ✅</h2><p>Please wait for the manager to approve you. After approval, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to log in</button></div>`)).catch(err);
+}
+
+// ---------- navigation ----------
 function buildTabs() {
-  const t = [['off','Meal Off'],['guest','Guest'],['baz','Bazar'],['rep','Report'],['day','Aj-er Meal']];
-  if (ROLE === 'M') t.unshift(['dep','Deposit']), t.push(['mem','Members'],['bill','Bills'],['mess','Mess'],['ent','Entries']);
-  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+  const t = [['rep','Report'],['day','Today'],['off','Meal Off'],['guest','Guest Meal'],['baz','Bazar']];
+  if (ROLE === 'M') t.splice(1, 0, ['dep','Deposit']), t.push(['mem','Members'],['bill','Bills'],['mess','Mess'],['ent','Entries']);
+  $('#tabs').style.display = ''; $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
 }
 function go(t) {
-  TAB = t; document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.id === 't_' + t));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.id === 't_' + t));
   ({off: () => form('off'), guest: () => form('guest'), baz: () => form('baz'), dep: () => form('dep'), rep: vRep, day: vDay, mem: vMem, bill: vBill, mess: vMess, ent: vEnt})[t]();
 }
-const wrap = h => $('#v').innerHTML = h;
 
-// ---------- entry forms: fill -> submit -> review -> confirm ----------
-function inp(k, l, t) {
-  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">Lunch</option><option value="D">Dinner</option></select>`;
+// ---------- entry forms ----------
+const FORMS = {
+  off: ['Meal Off', 'Stop your meals while you are away. বাইরে থাকলে মিল বন্ধ রাখুন।', [
+    ['offDate','Meal off from (date)','date'],['offShift','Starting from','shift'],
+    ['onDate','Meal on again from (date)','date?','ফিরে আসার তারিখ জানা না থাকলে খালি রাখুন, পরে দিতে পারবেন।'],['onShift','Starting from','shift']]],
+  guest: ['Guest Meal', 'Add guest meals eaten by your guests. অতিথি খেলে এখানে লিখুন।', [
+    ['date','Date','date'],['shift','Meal','shift'],['count','Number of guests','number','যেমন: ২']]],
+  baz: ['Bazar Entry', 'Record the bazar you bought. বাজারের খরচ এখানে লিখুন।', [
+    ['date','Date','date'],['amount','Amount (৳)','number','যেমন: ৫০০'],['items','Items bought (optional)','text','যেমন: চাল, ডাল, মাছ']]],
+  dep: ['Deposit Entry', 'Record money deposited by a member. সদস্যের জমা টাকা লিখুন।', [
+    ['date','Date','date'],['amount','Amount (৳)','number','যেমন: ৩০০০'],['note','Note (optional)','text']]]
+};
+function inp(k, l, t, h) {
   const ty = t.startsWith('date') ? 'date' : t === 'number' ? 'number' : 'text';
-  return `<label>${l}</label><input id="f_${k}" type="${ty}" ${ty === 'date' && t === 'date' ? `value="${I.today}"` : ''} ${ty === 'number' ? 'inputmode="decimal"' : ''}>`;
+  const hint = h ? `<div class="hint">${h}</div>` : '';
+  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">Lunch</option><option value="D">Dinner</option></select>`;
+  return `<label>${l}${hint}</label><input id="f_${k}" type="${ty}" ${t === 'date' ? `value="${I.today}"` : ''} ${ty === 'number' ? 'inputmode="decimal" min="0"' : ''}>`;
 }
-function memSel() { return ROLE === 'M' ? `<label>Member</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : ''; }
 async function form(type) {
-  const [title, fs] = FORMS[type];
+  const [title, sub, fs] = FORMS[type];
+  const mem = ROLE === 'M' ? `<label>Member</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
   let extra = '';
-  if (type === 'off' && ROLE === 'U') extra = await offList();
-  wrap(`<div class="c"><b>${title}</b>${memSel()}${fs.map(x => inp(...x)).join('')}<button class="p" onclick="review('${type}')">Submit</button></div>${extra}`);
+  if (type === 'off' && ROLE === 'U') try { extra = await offList(); } catch (e) { err(e); }
+  wrap(`<div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div>${extra}`);
 }
 function review(type) {
-  const fs = FORMS[type][1], d = {};
+  const fs = FORMS[type][2], d = {};
   if (ROLE === 'M') d.member = $('#f_member').value;
   fs.forEach(x => d[x[0]] = $('#f_' + x[0]).value);
-  window.PEND = d;
-  const rows = (ROLE === 'M' ? [['Member', d.member]] : [['Member', U]]).concat(fs.map(x => [x[1].split(' - ')[0], x[2] === 'shift' ? SH[d[x[0]]] : d[x[0]] || '-']));
-  wrap(`<div class="c"><b>Apnar deya tottho - thik ache?</b><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
-  <button class="p" onclick="confirmSave('${type}')">Confirm</button><button class="g" onclick="go('${type}')">Back</button></div>`);
-}
-function confirmSave(type) {
-  run('save', U, P, type, window.PEND).then(() => { alert('Save hoyeche'); go(type); }).catch(e => alert(e.message));
+  const need = fs.filter(x => x[2] === 'date' || x[2] === 'number');
+  if (need.some(x => !d[x[0]] || (x[2] === 'number' && !(Number(d[x[0]]) > 0)))) return toast('Please fill in all required fields', 1);
+  const rows = [['Member', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].replace(/ \(.*\)/, ''), x[2] === 'shift' ? SH[d[x[0]]] : (d[x[0]] || '-')]));
+  wrap(`<div class="card"><h3>Please check your details</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
+  <button class="btn" id="cf">Confirm</button><button class="btn sec" onclick="go('${type}')">Edit</button></div>`);
+  $('#cf').onclick = () => run('save', U, P, type, d).then(() => { toast('Saved successfully'); go(type); }).catch(err);
 }
 async function offList() {
-  const l = await run('myOffs', U, P);
-  const open = l.filter(r => !r[5]);
-  return `<div class="c"><b>Amar Meal Off</b><table>${l.slice(0, 15).map(r => `<tr><td>${r[3]} ${SH[r[4]]}</td><td>${r[5] ? r[5] + ' ' + SH[r[6]] : 'on hoyni'}</td></tr>`).join('') || '<tr><td>Nai</td></tr>'}</table></div>
-  ${open.map(r => `<div class="c"><b>${r[3]} ${SH[r[4]]} theke off - abar on korun</b><input type="date" id="r_${r[0]}" value="${I.today}"><select id="s_${r[0]}"><option value="L">Lunch</option><option value="D">Dinner</option></select><button class="p" onclick="ret('${r[0]}')">Meal on korun</button></div>`).join('')}`;
+  const l = await run('myOffs', U, P), open = l.filter(r => !r[5]);
+  return `<div class="card"><h3>My meal-off history</h3>${l.length ? `<table><tr><th>Off from</th><th>On again</th></tr>${l.slice(0, 12).map(r => `<tr><td>${r[3]} · ${SH[r[4]]}</td><td>${r[5] ? r[5] + ' · ' + SH[r[6]] : 'Not set'}</td></tr>`).join('')}</table>` : '<div class="empty">No entries yet</div>'}</div>
+  ${open.map(r => `<div class="card"><h3>Back from ${r[3]}?</h3><p class="sub">Turn your meal on again. ফিরে এলে মিল চালু করুন।</p><div class="flex"><input type="date" id="r_${r[0]}" value="${I.today}"><select id="s_${r[0]}"><option value="L">Lunch</option><option value="D">Dinner</option></select></div><button class="btn" onclick="ret('${r[0]}')">Turn meal on</button></div>`).join('')}`;
 }
 function ret(id) {
-  if (!confirm('Confirm: ' + $('#r_' + id).value + ' ' + SH[$('#s_' + id).value] + ' theke meal on?')) return;
-  run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value).then(() => go('off')).catch(e => alert(e.message));
+  run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value).then(() => { toast('Meal is on again'); go('off'); }).catch(err);
 }
 
 // ---------- reports ----------
-async function vDay() {
-  wrap(`<div class="c"><label>Tarikh</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`); loadDay();
+function vDay() {
+  wrap(`<div class="card"><h2>Today's Meals</h2><p class="sub">See who is eating. কে কে খাবে দেখুন।</p><label>Date</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`); loadDay();
 }
-async function loadDay() {
-  const d = await run('daily', $('#dd').value);
-  $('#dr').innerHTML = !d.ok ? '<p>Mess shuru hoyni</p>' : ['L', 'D'].map(s => `<h4>${SH[s]}: ${d[s].length + d['g' + s.toLowerCase()]} meal</h4><div>${d[s].map(esc).join(', ') || '-'}${d['g' + s.toLowerCase()] ? ' (+ ' + d['g' + s.toLowerCase()] + ' guest)' : ''}</div>`).join('');
+function loadDay() {
+  run('daily', $('#dd').value).then(d => {
+    $('#dr').innerHTML = !d.ok ? '<div class="empty">The mess has not started yet.</div>' : ['L', 'D'].map(s => { const g = d['g' + s.toLowerCase()];
+      return `<h3 style="margin-top:16px">${SH[s]} · ${d[s].length + g} meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${g} guest</span>` : ''}</div>`; }).join('');
+  }).catch(err);
 }
 async function vRep() {
-  const d = await run('report', U, P); window.D = d;
-  if (!d.ok) return wrap('<div class="c">Mess shuru hoyni</div>');
-  wrap(`<div class="c"><b>Month Summary</b><table>
-  <tr><td>Shuru</td><td>${d.cfg.Start}</td></tr><tr><td>Sesh</td><td>${d.cfg.End || 'cholche'}</td></tr><tr><td>Mot din</td><td>${d.days}</td></tr>
-  <tr><td>Mot bazar</td><td>${f(d.tb)}</td></tr><tr><td>Mot meal</td><td>${d.tm}</td></tr><tr><td>Meal rate</td><td><b>${f(d.rate)}</b></td></tr>
-  <tr><td>Mot fixed bill</td><td>${f(d.fixed)}</td></tr><tr><td>Mot deposit</td><td>${f(d.td)}</td></tr></table></div>
-  ${Object.keys(d.m).map(card).join('')}<div class="c"><button class="g" onclick="window.print()">Print / PDF</button></div>`);
+  let d; try { d = await run('report', U, P); } catch (e) { return err(e); }
+  D = d;
+  if (!d.ok) return wrap('<div class="card empty"><h2>Mess not started</h2><p>The manager has not started the mess yet.</p></div>');
+  NAMES = Object.keys(d.m);
+  const sum = `<div class="card"><h2>Month Summary</h2><p class="sub">${d.cfg.Start} to ${d.cfg.End || 'today (running)'} · ${d.days} days</p><div class="tiles">
+  <div class="tile"><span>Total bazar</span><b>${tk(d.tb)}</b></div><div class="tile"><span>Total meals</span><b>${d.tm}</b></div>
+  <div class="tile"><span>Meal rate</span><b>${tk(d.rate)}</b></div><div class="tile"><span>Fixed bills</span><b>${tk(d.fixed)}</b></div>
+  <div class="tile"><span>Total deposit</span><b>${tk(d.td)}</b></div><div class="tile"><span>Members</span><b>${d.cnt}</b></div></div></div>`;
+  if (ROLE !== 'M') return wrap(sum + detail(0));
+  wrap(sum + `<div class="card"><h3>Member Reports</h3><p class="sub">Tap a name to open the full report.</p>${NAMES.map((n, i) => { const x = d.m[n], p = x.bal >= 0;
+    return `<div class="row" onclick="openMember(${i})"><div><b>${esc(n)}</b><small>${x.meals + x.guest} meals · cost ${tk(x.cost)}</small></div><span class="badge ${p ? 'pos' : 'neg'}">${p ? 'Gets' : 'Pays'} ${tk(Math.abs(x.bal))}</span></div>`; }).join('') || '<div class="empty">No members yet</div>'}</div>`);
 }
-function card(n) {
-  const d = window.D, x = d.m[n], b = x.bal >= 0;
-  return `<div class="c"><b>${esc(n)}</b><table>
-  <tr><td>Meal khaise</td><td>${x.meals}${x.guest ? ' + ' + x.guest + ' guest' : ''}</td></tr>
-  <tr><td>Meal rate</td><td>${f(d.rate)}</td></tr><tr><td>Meal-er taka</td><td>${f(x.mealCost)}</td></tr>
-  ${d.bills.map(bl => `<tr><td>${esc(bl[0])} vag</td><td>${f(d.cnt ? bl[1] / d.cnt : 0)}</td></tr>`).join('')}
-  <tr><td><b>Mot khoroch</b></td><td><b>${f(x.cost)}</b></td></tr>
-  <tr><td>Deposit</td><td>${f(x.dep)}</td></tr>
-  <tr><td>Bazar korse (${x.bl.length} din)</td><td>${f(x.bazar)}</td></tr>
-  <tr><td><b>Mot joma</b></td><td><b>${f(x.paid)}</b></td></tr>
-  <tr><td><b>${b ? 'Pabe' : 'Dibe'}</b></td><td class="${b ? 'pos' : 'neg'}">${f(Math.abs(x.bal))}</td></tr></table>
-  <div class="sm">Bazar: ${x.bl.map(r => r[0] + ' = ' + f(r[1])).join('; ') || '-'}</div>
-  <button class="g" onclick="share('${esc(n)}')">WhatsApp text copy</button></div>`;
+function openMember(i) { wrap(`<button class="btn sec sm" style="margin-bottom:12px" onclick="vRep()">← All members</button>` + detail(i)); }
+function detail(i) {
+  const n = NAMES[i], x = D.m[n], p = x.bal >= 0;
+  return `<div class="card"><h2>${esc(n)}</h2><p class="sub">${D.cfg.Start} to ${D.cfg.End || 'today'}</p>
+  <div class="banner ${p ? 'pos' : 'neg'}">${p ? 'You will get back' : 'You need to pay'}<b>${tk(Math.abs(x.bal))}</b></div>
+  <div class="tiles"><div class="tile"><span>Meals eaten</span><b>${x.meals + x.guest}</b></div><div class="tile"><span>Meal rate</span><b>${tk(D.rate)}</b></div>
+  <div class="tile"><span>Total cost</span><b>${tk(x.cost)}</b></div><div class="tile"><span>Total paid</span><b>${tk(x.paid)}</b></div></div>
+  <h3 style="margin-top:18px">Cost details</h3><table>
+  <tr><td>Meals (${x.meals}${x.guest ? ' + ' + x.guest + ' guest' : ''}) × ${f(D.rate)}</td><td>${tk(x.mealCost)}</td></tr>
+  ${D.bills.map(b => `<tr><td>${esc(b[0])} (share)</td><td>${tk(D.cnt ? b[1] / D.cnt : 0)}</td></tr>`).join('')}
+  <tr><td><b>Total cost</b></td><td><b>${tk(x.cost)}</b></td></tr></table>
+  <h3 style="margin-top:18px">Money paid</h3><table>
+  <tr><td>Deposit</td><td>${tk(x.dep)}</td></tr><tr><td>Bazar spent (${x.bl.length} days)</td><td>${tk(x.bazar)}</td></tr>
+  <tr><td><b>Total paid</b></td><td><b>${tk(x.paid)}</b></td></tr></table>
+  ${x.bl.length ? `<h3 style="margin-top:18px">Bazar list</h3><table><tr><th>Date</th><th>Items</th><th>Amount</th></tr>${x.bl.map(r => `<tr><td>${r[0]}</td><td>${esc(r[2]) || '-'}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
+  ${x.dl.length ? `<h3 style="margin-top:18px">Deposits</h3><table><tr><th>Date</th><th>Amount</th></tr>${x.dl.map(r => `<tr><td>${r[0]}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
+  <div class="flex" style="margin-top:6px"><button class="btn" onclick="share(${i})">Copy for WhatsApp</button><button class="btn sec" onclick="window.print()">Print / PDF</button></div></div>`;
 }
-function share(n) {
-  const d = window.D, x = d.m[n];
-  const t = `${n} - hishab (${d.cfg.Start} theke ${d.cfg.End || 'ekhon porjonto'})\nMeal: ${x.meals + x.guest} x rate ${f(d.rate)} = ${f(x.mealCost)}\nFixed bill vag: ${f(x.share)}\nMot khoroch: ${f(x.cost)}\nDeposit: ${f(x.dep)}\nBazar: ${f(x.bazar)} (${x.bl.map(r => r[0] + ' ' + f(r[1])).join(', ') || '-'})\nMot joma: ${f(x.paid)}\n${x.bal >= 0 ? 'Pabe' : 'Dibe'}: ${f(Math.abs(x.bal))}`;
-  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => alert('Copy hoyeche')).catch(() => prompt('Copy korun', t));
+function share(i) {
+  const n = NAMES[i], x = D.m[n];
+  const t = `${n} - Mess report (${D.cfg.Start} to ${D.cfg.End || 'today'})\nMeals: ${x.meals + x.guest} x ${f(D.rate)} = ${tk(x.mealCost)}\nFixed bills share: ${tk(x.share)}\nTotal cost: ${tk(x.cost)}\nDeposit: ${tk(x.dep)}\nBazar: ${tk(x.bazar)}${x.bl.length ? ' (' + x.bl.map(r => r[0] + ' ' + tk(r[1])).join(', ') + ')' : ''}\nTotal paid: ${tk(x.paid)}\n${x.bal >= 0 ? 'Gets back' : 'Needs to pay'}: ${tk(Math.abs(x.bal))}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Copied. Paste it in WhatsApp.')).catch(() => prompt('Copy this text', t));
 }
 
 // ---------- manager ----------
 const M = (act, d) => run('mgr', U, P, act, d);
 async function vMem() {
-  const l = await M('lists');
-  wrap(`<div class="c"><b>Members</b>${l.members.map((r, i) => `<label>${esc(r[0])}</label><div style="display:flex;gap:6px"><input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric"><select id="ma${i}"><option ${r[2] === 'Yes' ? 'selected' : ''}>Yes</option><option ${r[2] === 'No' ? 'selected' : ''}>No</option></select><button class="p" style="margin:0" onclick="svMem('${esc(r[0])}',${i})">Save</button></div>`).join('')}
-  <hr><b>Notun member</b><label>Naam</label><input id="nn"><label>4-digit PIN</label><input id="np" maxlength="4" inputmode="numeric"><button class="p" onclick="addMem()">Add</button>
-  <p class="sm">Yes = Active, No = Inactive. Naam pore bodlano jabe na.</p></div>`);
+  let l; try { l = await M('lists'); } catch (e) { return err(e); }
+  LM = l.members; const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending'), act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
+  wrap(`${pend.length ? `<div class="card"><h3>Waiting for approval (${pend.length})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><b>${esc(r[0])}</b><div class="flex"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
+  <div class="card"><h3>Members (${act.length})</h3><p class="sub">Active members share the bills. Inactive members are left out.</p>${act.map(([r, i]) => `<label>${esc(r[0])}</label><div class="flex"><input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric"><select id="ma${i}"><option value="Yes" ${r[2] === 'Yes' ? 'selected' : ''}>Active</option><option value="No" ${r[2] === 'No' ? 'selected' : ''}>Inactive</option></select><button class="btn sm" style="flex:0 0 auto" onclick="svMem(${i})">Save</button></div>`).join('') || '<div class="empty">No members yet</div>'}</div>
+  <div class="card"><h3>Add a member</h3><label>Full name</label><input id="nn"><label>4-digit PIN</label><input id="np" maxlength="4" inputmode="numeric"><button class="btn" onclick="addMem()">Add member</button></div>`);
 }
-const svMem = (n, i) => M('member', {name: n, pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(() => { alert('Saved'); vMem(); }).catch(e => alert(e.message));
-const addMem = () => M('member', {name: $('#nn').value.trim(), pin: $('#np').value, active: 'Yes'}).then(() => { alert('Added'); init2(); }).catch(e => alert(e.message));
-function init2() { run('init').then(d => { I = d; vMem(); }); }
+const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = await run('init'); vMem(); }).catch(err);
+const svMem = i => M('member', {name: LM[i][0], pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Saved'); I = await run('init'); vMem(); }).catch(err);
+const addMem = () => M('member', {name: $('#nn').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = await run('init'); vMem(); }).catch(err);
 async function vBill() {
-  const l = (await M('lists')).bills; while (l.length < l.length + 0 || l.length < 6) { if (l.length >= 6) break; l.push(['', '']); }
-  wrap(`<div class="c"><b>Fixed Bills (Active member-der moddhe soman vag)</b>${l.map((r, i) => `<label>Bill naam / taka</label><div style="display:flex;gap:6px"><input id="bn${i}" value="${esc(r[0])}"><input id="ba${i}" type="number" value="${esc(r[1])}"></div>`).join('')}<button class="p" onclick="svBill(${l.length})">Save</button></div>`);
+  let l; try { l = (await M('lists')).bills; } catch (e) { return err(e); }
+  while (l.length < 6) l.push(['', '']);
+  wrap(`<div class="card"><h2>Fixed Bills</h2><p class="sub">Shared equally among all active members. যেমন: Maid, Wi-Fi, Electricity</p>${l.map((r, i) => `<label>Bill ${i + 1}</label><div class="flex"><input id="bn${i}" placeholder="Bill name" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="Amount" value="${esc(r[1])}"></div>`).join('')}<button class="btn" onclick="svBill(${l.length})">Save bills</button></div>`);
 }
-const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => alert('Saved')).catch(e => alert(e.message));
+const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
 async function vMess() {
-  const c = (await M('lists')).cfg;
-  wrap(`<div class="c"><b>Mess</b><p>Shuru: <b>${c.Start || '-'}</b> | Sesh: <b>${c.End || 'cholche'}</b></p>
-  <label>Mess shuru-r tarikh</label><input type="date" id="ms" value="${I.today}"><button class="p" onclick="mm('start','ms')">Mess shuru</button>
-  <label>Mess sesh-er tarikh (beton paoar din)</label><input type="date" id="me" value="${I.today}"><button class="p" onclick="mm('close','me')">Mess close</button>
-  <hr><button class="p" onclick="nm()">Notun mash (archive + reset)</button><button class="g" onclick="M('sheets').then(()=>alert('Sheet update hoyeche'))">Report sheet update</button>
-  <label>Manager PIN bodlan</label><input id="mpin" maxlength="4" inputmode="numeric"><button class="p" onclick="cp()">PIN save</button></div>`);
+  let c; try { c = (await M('lists')).cfg; } catch (e) { return err(e); }
+  wrap(`<div class="card"><h2>Mess Settings</h2><div class="tiles"><div class="tile"><span>Start date</span><b style="font-size:16px">${c.Start || 'Not started'}</b></div><div class="tile"><span>End date</span><b style="font-size:16px">${c.End || 'Running'}</b></div></div>
+  <label>Start the mess on<div class="hint">মেস শুরুর তারিখ</div></label><input type="date" id="ms" value="${I.today}"><button class="btn" onclick="mm('start','ms')">Start mess</button>
+  <label>Close the mess on<div class="hint">বেতন পাওয়ার দিন মেস শেষ করুন</div></label><input type="date" id="me" value="${I.today}"><button class="btn red" onclick="mm('close','me')">Close mess</button></div>
+  <div class="card"><h3>Start a new month</h3><p class="sub">Saves this month in a backup file and clears the data for the new month. Close the mess first.</p><button class="btn sec" onclick="nm()">Start new month</button><button class="btn sec" onclick="M('sheets').then(()=>toast('Report sheets updated')).catch(err)">Update report sheets</button></div>
+  <div class="card"><h3>Change manager PIN</h3><input id="mpin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN"><button class="btn" onclick="cp()">Save PIN</button></div>`);
 }
-const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { alert('Done'); vMess(); }).catch(e => alert(e.message));
-const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; alert('PIN bodlano hoyeche'); }).catch(e => alert(e.message));
-const nm = () => confirm('Ei mash-er data archive file-e rakhe notun mash shuru hobe. Nishchit?') && M('newMonth').then(u => { alert('Archive: ' + u); vMess(); }).catch(e => alert(e.message));
+const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Done'); vMess(); }).catch(err);
+const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; toast('PIN changed'); }).catch(err);
+const nm = () => confirm('This will save the current month to a backup file and clear all entries. Continue?') && M('newMonth').then(u => { toast('New month started. Backup saved in your Google Drive.'); vMess(); }).catch(err);
 async function vEnt() {
-  const e = (await M('lists')).ent;
-  wrap(Object.keys(e).map(k => `<div class="c"><b>${k}</b><div style="overflow-x:auto"><table>${e[k].map(r => `<tr><td>${r.slice(1).map(esc).join(' | ')}</td><td><button class="g" style="margin:0" onclick="del('${k}','${r[0]}')">Delete</button></td></tr>`).join('') || '<tr><td>Nai</td></tr>'}</table></div></div>`).join(''));
+  let e; try { e = (await M('lists')).ent; } catch (x) { return err(x); }
+  const T = {MealOff: 'Meal Off', Guests: 'Guest Meals', Bazar: 'Bazar', Deposits: 'Deposits'};
+  wrap(Object.keys(e).map(k => `<div class="card"><h3>${T[k]}</h3>${e[k].length ? `<table>${e[k].map(r => `<tr><td>${r.slice(2).filter(v => v !== '').map(esc).join(' · ')}</td><td><button class="btn sm red" onclick="del('${k}','${r[0]}')">Delete</button></td></tr>`).join('')}</table>` : '<div class="empty">No entries</div>'}</div>`).join(''));
 }
-const del = (s, id) => confirm('Delete korben?') && M('del', {sheet: s, id: id}).then(vEnt).catch(e => alert(e.message));
+const del = (s, id) => confirm('Delete this entry?') && M('del', {sheet: s, id: id}).then(() => { toast('Deleted'); vEnt(); }).catch(err);
 start();
 </script></body></html>
