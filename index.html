@@ -81,11 +81,11 @@ const load = (d, msg) => {
     clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'Still working, please wait...', 4000);
   } else { busy = 0; shown = 0; clearInterval(fun); clearTimeout(slow); el.style.display = 'none'; }
 };
-const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...', request: 'Sending request...'};
+const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...', request: 'Sending request...', boot: 'Logging in...'};
 const call = (fn, a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json())
   .then(j => { if (!j.ok) throw new Error(j.error); return j.data; })
   .catch(e => { throw new Error(/fetch/i.test(e.message) ? 'No internet connection. Please try again.' : e.message); });
-const run = (fn, ...a) => { load(1, MSG[fn] || (fn === 'mgr' && ['lists', 'reqs'].indexOf(a[2]) < 0 ? 'Saving...' : 'Loading...')); return call(fn, a).finally(() => load(-1)); };
+const run = (fn, ...a) => { if (!RO[fn] && !(fn === 'mgr' && (a[2] === 'lists' || a[2] === 'reqs'))) VC = {}; load(1, MSG[fn] || (fn === 'mgr' && ['lists', 'reqs'].indexOf(a[2]) < 0 ? 'Saving...' : 'Loading...')); return call(fn, a).finally(() => load(-1)); };
 const runQ = (fn, ...a) => call(fn, a);
 const toast = (m, bad) => { const t = $('#toast'); t.textContent = m; t.className = (bad ? 'bad ' : '') + 'show'; clearTimeout(window._t); window._t = setTimeout(() => t.className = bad ? 'bad' : '', 3200); };
 const err = e => toast(e.message, 1);
@@ -111,10 +111,11 @@ function showLogin() {
 function login() {
   U = $('#u').value; P = $('#p').value;
   if (!/^\d{4}$/.test(P)) return toast('Please enter your 4-digit PIN', 1);
-  run('login', U, P).then(async r => {
-    ROLE = r; $('#me').textContent = r === 'M' ? 'Manager' : U; $('#out').style.display = '';
-    if (r === 'M') I = await run('init');
-    buildTabs(); await afterLogin(); go('rep');
+  run('boot', U, P).then(b => {
+    ROLE = b.role; I = b.init; ME = b.me; VC = {};
+    VC['me' + JSON.stringify([U, P])] = b.me; VC['report' + JSON.stringify([U, P])] = b.rep;
+    $('#me').textContent = ROLE === 'M' ? 'Manager' : U; $('#out').style.display = '';
+    buildTabs(); afterLogin(); go('rep');
   }).catch(err);
 }
 function showSignup() {
@@ -140,7 +141,7 @@ function buildTabs() {
 }
 function go(t) {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.id === 't_' + t));
-  ({off: () => form('off'), guest: () => form('guest'), baz: () => form('baz'), dep: () => form('dep'), req: vReq, pay: vPay, duty: vDuty, rep: vRep, day: vDay, mem: vMem, bill: vBill, mess: vMess, ent: vEnt})[t]();
+  CUR = t; VIEWS[t]();
 }
 
 // ---------- entry forms ----------
@@ -164,9 +165,8 @@ function inp(k, l, t, h) {
 async function form(type) {
   const [title, sub, fs] = FORMS[type];
   const mem = ROLE === 'M' ? `<label>Member</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
-  let extra = '';
-  if (type === 'off' && ROLE === 'U') try { extra = await offList(); } catch (e) { err(e); }
-  wrap(`<div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div>${extra}`);
+  wrap(`<div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div><div id="offl"></div>`);
+  if (type === 'off' && ROLE === 'U') offList();
 }
 function review(type) {
   const fs = FORMS[type][2], d = {};
@@ -179,10 +179,15 @@ function review(type) {
   <button class="btn" id="cf">Confirm</button><button class="btn sec" onclick="go('${type}')">Edit</button></div>`);
   $('#cf').onclick = () => run('save', U, P, type, d).then(() => { toast('Saved successfully'); go(type); }).catch(err);
 }
-async function offList() {
-  const l = await run('myOffs', U, P), open = l.filter(r => !r[5]);
+function offHtml(l) {
+  const open = l.filter(r => !r[5]);
   return `<div class="card"><h3>My meal-off history</h3>${l.length ? `<table><tr><th>Off from</th><th>On again</th></tr>${l.slice(0, 12).map(r => `<tr><td>${r[3]} · ${SH[r[4]]}</td><td>${r[5] ? r[5] + ' · ' + SH[r[6]] : 'Not set'}</td></tr>`).join('')}</table>` : '<div class="empty">No entries yet</div>'}</div>
   ${open.map(r => `<div class="card"><h3>Back from ${r[3]}?</h3><p class="sub">Turn your meal on again. ফিরে এলে মিল চালু করুন।</p><div class="flex"><input type="date" id="r_${r[0]}" value="${I.today}"><select id="s_${r[0]}"><option value="L">Lunch</option><option value="D">Dinner</option></select></div><button class="btn" onclick="ret('${r[0]}')">Turn meal on</button></div>`).join('')}`;
+}
+function offList() {
+  const k = 'myOffs' + U, draw = l => { const e = $('#offl'); if (e) e.innerHTML = offHtml(l); };
+  if (VC[k]) draw(VC[k]);
+  call('myOffs', [U, P]).then(l => { VC[k] = l; if (!typing()) draw(l); }).catch(err);
 }
 function ret(id) {
   run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value).then(() => { toast('Meal is on again'); go('off'); }).catch(err);
@@ -192,14 +197,17 @@ function ret(id) {
 function vDay() {
   wrap(`<div class="card"><h2>Today's Meals</h2><p class="sub">See who is eating. কে কে খাবে দেখুন।</p><label>Date</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`); loadDay();
 }
+function drawDay(d) {
+  $('#dr').innerHTML = !d.ok ? '<div class="empty">The mess has not started yet.</div>' : ['L', 'D'].map(s => { const g = d['g' + s.toLowerCase()];
+    return `<h3 style="margin-top:16px">${SH[s]} · ${d[s].length + g} meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${g} guest</span>` : ''}</div>`; }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:16px">Frozen (unpaid dues)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
+}
 function loadDay() {
-  run('daily', $('#dd').value).then(d => {
-    $('#dr').innerHTML = !d.ok ? '<div class="empty">The mess has not started yet.</div>' : ['L', 'D'].map(s => { const g = d['g' + s.toLowerCase()];
-      return `<h3 style="margin-top:16px">${SH[s]} · ${d[s].length + g} meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${g} guest</span>` : ''}</div>`; }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:16px">Frozen (unpaid dues)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
-  }).catch(err);
+  const dt = $('#dd').value, k = 'daily' + dt, hit = VC[k], ok = () => $('#dr') && $('#dd') && $('#dd').value === dt;
+  if (hit) drawDay(hit); else load(1, 'Loading...');
+  call('daily', [dt]).then(d => { VC[k] = d; if (!hit) load(-1); if (ok()) drawDay(d); }).catch(e => { if (!hit) load(-1); err(e); });
 }
 async function vRep() {
-  let d; try { d = await run('report', U, P); } catch (e) { return err(e); }
+  let d; try { d = await rc('report', U, P); } catch (e) { return err(e); }
   D = d;
   if (!d.ok) return wrap('<div class="card empty"><h2>Mess not started</h2><p>The manager has not started the mess yet.</p></div>');
   NAMES = Object.keys(d.m);
@@ -236,7 +244,7 @@ function share(i) {
 }
 
 // ---------- manager ----------
-const M = (act, d) => run('mgr', U, P, act, d);
+const M = (act, d) => (act === 'lists' || act === 'reqs') ? rc('mgr', U, P, act, d) : run('mgr', U, P, act, d);
 async function vMem() {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   LM = l.members; const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending'), act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
@@ -248,7 +256,7 @@ const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'ap
 const svMem = i => M('member', {name: LM[i][0], pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Saved'); I = await run('init'); vMem(); }).catch(err);
 const addMem = () => M('member', {name: $('#nn').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = await run('init'); vMem(); }).catch(err);
 async function vBill() {
-  let l; try { l = (await M('lists')).bills; } catch (e) { return err(e); }
+  let l; try { l = (await M('lists')).bills.slice(); } catch (e) { return err(e); }
   while (l.length < 6) l.push(['', '']);
   wrap(`<div class="card"><h2>Fixed Bills</h2><p class="sub">Shared equally among all active members. যেমন: Maid, Wi-Fi, Electricity</p>${l.map((r, i) => `<label>Bill ${i + 1}</label><div class="flex"><input id="bn${i}" placeholder="Bill name" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="Amount" value="${esc(r[1])}"></div>`).join('')}<button class="btn" onclick="svBill(${l.length})">Save bills</button></div>`);
 }
@@ -280,8 +288,7 @@ const addSeen = ids => { try { localStorage.setItem(seenKey(), JSON.stringify(ge
 const stMap = m => { const o = {}; (m.mine || []).forEach(r => o[r[0]] = r[8]); return o; };
 const reqText = r => r[3] === 'pay' ? 'Your payment request of ' + tk(r[4]) : 'Your grace period request';
 
-async function afterLogin() {
-  try { ME = await run('me', U, P); } catch (e) { ME = {today: I.today, duties: []}; }
+function afterLogin() {
   lastPend = ROLE === 'M' ? ME.pending : null; lastSt = ROLE === 'U' ? stMap(ME) : null;
   setBell(); renderAlerts(); showModal(); startPoll();
 }
@@ -300,7 +307,7 @@ function startPoll() {
       const m = await runQ('me', U, P);
       if (ROLE === 'M') { if (lastPend !== null && m.pending > lastPend) toast('🔔 New request received'); lastPend = m.pending; }
       else { const s = stMap(m); Object.keys(s).forEach(id => { if (lastSt && lastSt[id] === 'Pending' && s[id] !== 'Pending') toast('Your request was ' + s[id].toLowerCase()); }); lastSt = s; }
-      ME = m; setBell(); renderAlerts();
+      ME = m; VC['me' + JSON.stringify([U, P])] = m; setBell(); renderAlerts();
     } catch (e) {}
   }, 45000);
 }
@@ -348,7 +355,7 @@ function closeModal(goReq) {
 // ---------- member: payments ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vPay() {
-  try { ME = await run('me', U, P); } catch (e) { return err(e); }
+  try { ME = await rc('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
   wrap(`<div class="card"><h2>Send Payment</h2><p class="sub">Paid your dues or given money? Tell the manager here. Your account is updated after the manager approves.</p>
@@ -394,7 +401,7 @@ const rqGrace = (id, n) => { if (!n && !confirm('Reject this request?')) return;
 
 // ---------- bazar duty ----------
 async function vDuty() {
-  try { ME = await run('me', U, P); } catch (e) { return err(e); }
+  try { ME = await rc('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const t = ME.today, l = ME.duties || [];
   const bd = d => { const a = dayGap(t, d[2]); return a < 0 ? ['pos', 'Running now'] : a === 0 ? ['neg', 'Starts today'] : a === 1 ? ['neg', 'Tomorrow'] : a === 2 ? ['warn', 'In 2 days'] : ['gray', 'In ' + a + ' days']; };
@@ -406,6 +413,18 @@ async function vDuty() {
 }
 const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('Please choose valid dates', 1); M('dutyAdd', d).then(() => { toast('Added to schedule'); vDuty(); }).catch(err); };
 const dutyDel = id => confirm('Remove this duty?') && M('dutyDel', {id: id}).then(() => { toast('Removed'); vDuty(); }).catch(err);
+
+// ---------- speed: instant tabs (show saved data first, refresh quietly) ----------
+let VC = {}, CUR = '';
+const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
+const VIEWS = {off: () => form('off'), guest: () => form('guest'), baz: () => form('baz'), dep: () => form('dep'), req: vReq, pay: vPay, duty: vDuty, rep: vRep, day: vDay, mem: vMem, bill: vBill, mess: vMess, ent: vEnt};
+const typing = () => { const e = document.activeElement; return !!(e && /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && $('#v').contains(e)); };
+const rc = (fn, ...a) => {
+  const k = fn + JSON.stringify(a), hit = VC[k], tab = CUR, get = () => call(fn, a).then(d => (VC[k] = d));
+  if (hit === undefined) { load(1, 'Loading...'); return get().finally(() => load(-1)); }
+  get().then(d => { if (JSON.stringify(d) !== JSON.stringify(hit) && CUR === tab && !typing() && VIEWS[tab]) VIEWS[tab](); }).catch(() => {});
+  return Promise.resolve(hit);
+};
 
 start();
 </script></body></html>
