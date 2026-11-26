@@ -9,11 +9,19 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;b
 .bar{background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
 .bar b{font-size:18px}.bar small{opacity:.85;display:block;font-size:12px}
 .bar button{background:#ffffff26;color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:13px}
-#load{display:none;position:fixed;inset:0;background:#0f172a73;z-index:20;align-items:center;justify-content:center}
-#load .box{background:#fff;border-radius:16px;padding:24px 30px;text-align:center;box-shadow:0 8px 30px #0003;min-width:200px}
-#load .spin{width:46px;height:46px;border:5px solid #ccfbf1;border-top-color:var(--g);border-radius:50%;margin:0 auto 14px;animation:sp .8s linear infinite}
-#load b{display:block;font-size:17px}#load small{display:block;color:var(--m);margin-top:6px;font-size:13px;min-height:16px}
-@keyframes sp{to{transform:rotate(360deg)}}
+#load{display:none;position:fixed;inset:0;background:#0f172a40;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:20;align-items:center;justify-content:center}
+#load .box{background:#fff;border-radius:20px;padding:22px 28px 20px;text-align:center;box-shadow:0 10px 40px #0003;width:250px;animation:pop .2s ease-out}
+#load .emo{font-size:46px;line-height:1;display:inline-block;animation:hop .55s ease-in-out infinite alternate}
+#load .sh{width:34px;height:6px;border-radius:50%;background:#0f172a1f;margin:6px auto 12px;animation:shd .55s ease-in-out infinite alternate}
+#load b{display:block;font-size:17px}
+#load .fun{display:block;color:var(--g);margin-top:4px;font-size:13px;font-weight:600;min-height:18px}
+#load .tr{height:4px;border-radius:4px;background:#ccfbf1;margin:14px 0 0;overflow:hidden}
+#load .tr i{display:block;height:100%;width:40%;border-radius:4px;background:linear-gradient(90deg,var(--g),#5eead4);animation:sl 1s ease-in-out infinite}
+#load small{display:block;color:var(--m);margin-top:10px;font-size:12px;min-height:14px}
+@keyframes hop{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-14px) rotate(6deg)}}
+@keyframes shd{from{transform:scaleX(1);opacity:1}to{transform:scaleX(.6);opacity:.5}}
+@keyframes sl{0%{margin-left:-40%}100%{margin-left:100%}}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 #tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:#fff;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:5}
 #tabs button{white-space:nowrap;border:1px solid var(--b);background:#f8fafc;color:#334155;border-radius:20px;padding:8px 14px;font-size:14px}
 #tabs button.on{background:var(--g);border-color:var(--g);color:#fff;font-weight:600}
@@ -50,7 +58,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 .bar .ic{position:relative;font-size:16px;padding:6px 10px}#bc{position:absolute;top:-7px;right:-7px;background:#dc2626;color:#fff;border-radius:10px;font:700 11px/1 system-ui;padding:3px 6px;font-style:normal}
 @media print{#tabs,.bar,button,#toast,#al,#modal{display:none!important}}
 </style></head><body>
-<div id="load"><div class="box"><div class="spin"></div><b id="lmsg">Loading...</b><small id="lsub"></small></div></div>
+<div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><div class="sh"></div><b id="lmsg">Loading...</b><span class="fun" id="lfun"></span><div class="tr"><i></i></div><small id="lsub"></small></div></div>
 <div class="bar"><div><b id="title">Mess Manager</b><small id="me"></small></div><div style="display:flex;gap:8px;align-items:center"><button id="bell" class="ic" title="Requests" style="display:none" onclick="go('req')">🔔<i id="bc" style="display:none"></i></button><button id="out" style="display:none" onclick="location.reload()">Log out</button></div></div>
 <div id="tabs" style="display:none"></div>
 <div class="wrap" id="al" style="padding-top:0;padding-bottom:0"></div>
@@ -60,12 +68,18 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbw_7rSc5kXsMjST6UexZniTrtwUeBWr_XBin1j_DrAP4Z6m33zbu_4kTcOoMVgTynVcjQ/exec';
 const $ = s => document.querySelector(s);
-let busy = 0, slow;
+let busy = 0, slow, fun, shown = 0;
+const FUN = [['🍚', 'Cooking the rice...'], ['🛒', 'Visiting the bazar...'], ['🧮', 'Counting the meals...'], ['🐟', 'Frying the fish...'], ['🥘', 'Stirring the curry...'], ['🧾', 'Checking the bills...']];
 const load = (d, msg) => {
   busy += d; const el = $('#load');
-  if (busy > 0) { if (msg) $('#lmsg').textContent = msg; $('#lsub').textContent = ''; el.style.display = 'flex';
-    clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'Still working, please wait...', 4000); }
-  else { clearTimeout(slow); el.style.display = 'none'; }
+  if (busy > 0) {
+    if (msg) $('#lmsg').textContent = msg;
+    if (shown) return; shown = 1; $('#lsub').textContent = '';
+    let k = Math.floor(Math.random() * FUN.length);
+    const tick = () => { $('#lemo').textContent = FUN[k][0]; $('#lfun').textContent = FUN[k][1]; k = (k + 1) % FUN.length; };
+    tick(); clearInterval(fun); fun = setInterval(tick, 1500); el.style.display = 'flex';
+    clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'Still working, please wait...', 4000);
+  } else { busy = 0; shown = 0; clearInterval(fun); clearTimeout(slow); el.style.display = 'none'; }
 };
 const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...', request: 'Sending request...'};
 const call = (fn, a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json())
@@ -334,7 +348,7 @@ function closeModal(goReq) {
 // ---------- member: payments ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vPay() {
-  try { ME = await runQ('me', U, P); } catch (e) { return err(e); }
+  try { ME = await run('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
   wrap(`<div class="card"><h2>Send Payment</h2><p class="sub">Paid your dues or given money? Tell the manager here. Your account is updated after the manager approves.</p>
@@ -380,7 +394,7 @@ const rqGrace = (id, n) => { if (!n && !confirm('Reject this request?')) return;
 
 // ---------- bazar duty ----------
 async function vDuty() {
-  try { ME = await runQ('me', U, P); } catch (e) { return err(e); }
+  try { ME = await run('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const t = ME.today, l = ME.duties || [];
   const bd = d => { const a = dayGap(t, d[2]); return a < 0 ? ['pos', 'Running now'] : a === 0 ? ['neg', 'Starts today'] : a === 1 ? ['neg', 'Tomorrow'] : a === 2 ? ['warn', 'In 2 days'] : ['gray', 'In ' + a + ' days']; };
