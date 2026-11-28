@@ -112,6 +112,55 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
 .meal-box h4{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
 
 @media print{#tabs,.bar,button,#toast,#al,#modal,.no-print{display:none!important}.card{box-shadow:none;border:1px solid #cbd5e1}}
+
+.nt-tab{margin-left:auto!important;background:#fef3c7!important;border-color:#f59e0b!important;color:#92400e!important;font-weight:700!important}
+.nt-tab.on{background:#d97706!important;border-color:#d97706!important;color:#fff!important}
+
+.act-chart-card{background:#f8fafc;border:1px solid var(--b);border-radius:12px;padding:12px;margin:10px 0 14px}
+.act-chart-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.act-chart-top b{font-size:13.5px;color:#0f172a}
+.act-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:#475569}
+.act-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.act-bar-row{margin-bottom:10px}
+.act-bar-row:last-child{margin-bottom:0}
+.act-bar-meta{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;margin-bottom:4px}
+.act-bar-meta span{color:#64748b;font-size:12px;text-align:right}
+.act-track{width:100%;height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.act-fill{height:100%;border-radius:999px;transition:width .25s ease}
+.act-fill.running{background:#16a34a}
+.act-fill.upcoming{background:#0284c7}
+.act-fill.done{background:#94a3b8}
+
+.duty-card{border:1px solid var(--b);border-radius:12px;padding:12px;margin-bottom:8px;background:#fff}
+.duty-card:last-child{margin-bottom:0}
+.duty-card.me{background:#f0fdfa;border-color:#99f6e4}
+.duty-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.duty-card-dates{font-size:12.5px;color:#475569;margin-top:4px}
+.duty-card-sub{font-size:12px;color:#64748b;margin-top:2px}
+
+.nt-item{border:1px solid var(--b);border-radius:12px;padding:12px;margin-bottom:8px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.nt-item:last-child{margin-bottom:0}
+.nt-item.dim{opacity:.58;background:#f8fafc}
+.nt-item-body{flex:1;min-width:0;word-break:break-word}
+.nt-item-body b{display:block;font-size:14px;color:#0f172a}
+.nt-item-body small{display:block;color:#64748b;font-size:12px;margin-top:4px}
+
+@media (max-width:480px){
+  .wrap{padding:10px}
+  .card{padding:13px;border-radius:12px}
+  h2{font-size:16.5px}
+  h3{font-size:14.5px}
+  .tiles{grid-template-columns:1fr 1fr;gap:8px}
+  .tile{padding:10px}
+  .tile b{font-size:16.5px}
+  .banner{flex-direction:column;align-items:flex-start;padding:12px}
+  .banner b{font-size:19px}
+  .flex{flex-wrap:wrap}
+  .call-btn{padding:6px 10px;font-size:12px}
+  .act-bar-meta{flex-direction:column;gap:2px}
+  .act-bar-meta span{text-align:left}
+  .duty-card-top{flex-direction:column;align-items:flex-start}
+}
 </style></head><body>
 <div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><b id="lmsg">Loading...</b><span class="fun" id="lfun"></span><small id="lsub"></small></div></div>
 <div class="bar">
@@ -254,7 +303,7 @@ function signReview() {
   $('#sc').onclick = () => run('signup', n, p, ph).then(() => wrap(`<div class="card empty"><h2>Request Sent ✅</h2><p>Please wait for the manager to approve your account. Once approved, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to Log in</button></div>`)).catch(err);
 }
 
-// ---------- Tabs (9 for Member, 8 for Manager) ----------
+// ---------- Tabs (Member + Corner "All Notice" Tab) ----------
 function buildTabs() {
   const t = ROLE === 'M'
     ? [
@@ -265,7 +314,8 @@ function buildTabs() {
         ['db', 'Duty & Bills'],
         ['nc', 'Notices & Close'],
         ['ms', 'Members & Settings'],
-        ['dir', 'Contacts']
+        ['dir', 'Contacts'],
+        ['allnt', 'All Notice', true]
       ]
     : [
         ['rep', 'Report'],
@@ -276,10 +326,11 @@ function buildTabs() {
         ['baz', 'Bazar'],
         ['duty', 'Duty'],
         ['req', 'Requests'],
-        ['dir', 'Contacts']
+        ['dir', 'Contacts'],
+        ['allnt', 'All Notice', true]
       ];
   $('#tabs').style.display = '';
-  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" class="${x[2] ? 'nt-tab' : ''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
 }
 
 function go(t, sub) {
@@ -527,6 +578,14 @@ function dutyStatusInfo(d, today) {
   };
 }
 
+function dutyProgressPct(d, today, state) {
+  const total = Math.max(1, dayGap(d[2], d[3]) + 1);
+  if (state === 'done') return 100;
+  if (state === 'upcoming') return 12;
+  const done = Math.min(total, Math.max(1, dayGap(d[2], today) + 1));
+  return Math.round((done / total) * 100);
+}
+
 async function vAct() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
   renderAlerts();
@@ -536,51 +595,86 @@ async function vAct() {
   const upcoming = duties.filter(d => t < d[2]);
   const completed = duties.filter(d => t > d[3]);
 
+  const maxSpan = duties.reduce((mx, d) => Math.max(mx, dayGap(d[2], d[3]) + 1), 1);
+  const chartRows = duties.slice(0, 8).map(d => {
+    const st = dutyStatusInfo(d, t);
+    const span = dayGap(d[2], d[3]) + 1;
+    const widthPct = st.state === 'running'
+      ? dutyProgressPct(d, t, st.state)
+      : Math.max(18, Math.min(100, Math.round((span / maxSpan) * 100)));
+    const barCls = st.state === 'running' ? 'running' : st.state === 'upcoming' ? 'upcoming' : 'done';
+    const shortMeta = st.state === 'running'
+      ? `${st.badgeText} (${fmt(d[2])}–${fmt(d[3])})`
+      : `${fmt(d[2])}–${fmt(d[3])} · ${st.badgeText}`;
+    return `<div class="act-bar-row">
+      <div class="act-bar-meta">
+        <b>${esc(d[1])}${d[1] === U ? ' (You)' : ''}</b>
+        <span>${esc(shortMeta)}</span>
+      </div>
+      <div class="act-track"><div class="act-fill ${barCls}" style="width:${widthPct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  const chartBox = duties.length
+    ? `<div class="act-chart-card">
+        <div class="act-chart-top">
+          <b>📊 Bazar Timeline Chart / বাজার চার্ট</b>
+          <div class="act-legend">
+            <span><i style="background:#16a34a"></i>Running</span>
+            <span><i style="background:#0284c7"></i>Upcoming</span>
+            <span><i style="background:#94a3b8"></i>Done</span>
+          </div>
+        </div>
+        ${chartRows}
+      </div>`
+    : '';
+
+  const cardItem = (d, st) => {
+    const isMe = d[1] === U;
+    return `<div class="duty-card ${isMe ? 'me' : ''}">
+      <div class="duty-card-top">
+        <div><b>${esc(d[1])}${isMe ? ' (You)' : ''}</b><div class="duty-card-dates">📅 ${fmt(d[2])} → ${fmt(d[3])}</div></div>
+        <span class="badge ${st.badgeClass}">${st.badgeText}</span>
+      </div>
+      <div class="duty-card-sub">${esc(st.detail)}</div>
+    </div>`;
+  };
+
   const runHtml = running.length
-    ? running.map(d => {
-        const st = dutyStatusInfo(d, t), isMe = d[1] === U;
-        return `<div class="row" style="cursor:default;${isMe ? 'background:#f0fdfa;border-radius:10px;padding:11px 8px' : ''}">
-          <div><b>${esc(d[1])}${isMe ? ' (You)' : ''}</b><small>${fmt(d[2])} to ${fmt(d[3])} · ${esc(st.detail)}</small></div>
-          <span class="badge ${st.badgeClass}">${st.badgeText}</span>
-        </div>`;
-      }).join('')
-    : '<div class="empty">No active bazar duty running today.</div>';
+    ? running.map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
+    : '<div class="empty">No active bazar duty today.</div>';
 
   const upHtml = upcoming.length
-    ? upcoming.map(d => {
-        const st = dutyStatusInfo(d, t), isMe = d[1] === U;
-        return `<div class="row" style="cursor:default;${isMe ? 'background:#f0fdfa;border-radius:10px;padding:11px 8px' : ''}">
-          <div><b>${esc(d[1])}${isMe ? ' (You)' : ''}</b><small>${fmt(d[2])} to ${fmt(d[3])} · ${esc(st.detail)}</small></div>
-          <span class="badge ${st.badgeClass}">${st.badgeText}</span>
-        </div>`;
-      }).join('')
+    ? upcoming.map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
     : '<div class="empty">No upcoming bazar dates scheduled.</div>';
 
   const doneHtml = completed.length
-    ? completed.slice().reverse().map(d => {
-        const st = dutyStatusInfo(d, t);
-        return `<div class="row" style="cursor:default">
-          <div><b>${esc(d[1])}</b><small>${fmt(d[2])} to ${fmt(d[3])} · ${esc(st.detail)}</small></div>
-          <span class="badge ${st.badgeClass}">${st.badgeText}</span>
-        </div>`;
-      }).join('')
+    ? completed.slice().reverse().map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
     : '<div class="empty">No completed bazar duties yet.</div>';
 
   wrap(`
     <div class="card">
       <div class="p-head">
-        <div><h2>Activity Board / বাজার অ্যাক্টিভিটি বোর্ড</h2><p class="sub" style="margin:0">See who is assigned bazar, active/remaining days, and upcoming dates.<span class="bn-note">কার বাজার চলছে, কয়দিন বাকি এবং সামনে কার বাজারের তারিখ আছে তা দেখুন।</span></p></div>
+        <div>
+          <h2>Activity Board / বাজার বোর্ড</h2>
+          <p class="sub" style="margin:0">Active bazar, remaining days & upcoming schedule.<span class="bn-note">কার বাজার চলছে, কয়দিন বাকি এবং সামনে কার তারিখ আছে।</span></p>
+        </div>
         ${rulesBtn('duty')}
       </div>
-      <h3>🔥 Active Bazar Duty Now / চলমান বাজার</h3>
+      <div class="tiles" style="margin-bottom:10px">
+        <div class="tile"><span>Running Now</span><b>${running.length}</b></div>
+        <div class="tile"><span>Upcoming</span><b>${upcoming.length}</b></div>
+      </div>
+      ${chartBox}
+      <h3>🔥 Active Now / চলমান বাজার</h3>
       ${runHtml}
     </div>
     <div class="card">
-      <h3>📅 Upcoming Bazar Assignments / সামনের বাজারের তারিখ</h3>
+      <h3>📅 Upcoming / সামনের বাজার</h3>
       ${upHtml}
     </div>
     <div class="card">
-      <h3>✅ Completed Bazar Duties / সম্পন্ন বাজার</h3>
+      <h3>✅ Completed / সম্পন্ন বাজার</h3>
       ${doneHtml}
     </div>
   `);
@@ -1262,6 +1356,75 @@ const moDel = id => confirm('Cancel this closure?') && M('moDel', {id}).then(() 
 
 // ---------- Fast View Cache & Views Registry ----------
 const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
+
+// ---------- Corner Tab: All Notice ----------
+async function vAllNotice() {
+  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  renderAlerts();
+  const t = ME.today || I.today;
+  const allNt = ME.nt || [];
+  const allMo = ME.mo || [];
+  const disSaved = getDisNt();
+
+  const ntHtml = allNt.length
+    ? allNt.map(x => {
+        const nid = 'nt_' + x[0];
+        const isHidden = disSaved.indexOf(nid) >= 0;
+        return `<div class="nt-item ${isHidden ? 'dim' : ''}">
+          <div class="nt-item-body">
+            <b>📢 ${esc(x[1])}</b>
+            <small>Valid until ${fmt(x[2])}${isHidden ? ' · Hidden from top banner' : ''}</small>
+          </div>
+          <button class="btn sm red" title="Remove notice" onclick="dis('${nid}',true);vAllNotice()">×</button>
+        </div>`;
+      }).join('')
+    : '<div class="empty">No notices available right now.</div>';
+
+  const moHtml = allMo.length
+    ? allMo.map(m => {
+        const mid = 'mo_' + m[0];
+        const isHidden = disSaved.indexOf(mid) >= 0;
+        return `<div class="nt-item ${isHidden ? 'dim' : ''}">
+          <div class="nt-item-body">
+            <b>🔕 Mess Closure</b>
+            <small>${esc(moTxt(m))}${isHidden ? ' · Hidden from top banner' : ''}</small>
+          </div>
+          <button class="btn sm red" title="Remove notice" onclick="dis('${mid}',true);vAllNotice()">×</button>
+        </div>`;
+      }).join('')
+    : '<div class="empty">No mess closure notices.</div>';
+
+  const dutyNt = (ME.duties || []).filter(d => d[1] === U && d[3] >= t).map(d => {
+    const st = dutyStatusInfo(d, t);
+    return `<div class="nt-item">
+      <div class="nt-item-body">
+        <b>🛒 Your Bazar Duty (${fmt(d[2])} → ${fmt(d[3])})</b>
+        <small>${esc(st.detail)}</small>
+      </div>
+      <span class="badge ${st.badgeClass}">${st.badgeText}</span>
+    </div>`;
+  }).join('');
+
+  wrap(`
+    <div class="card">
+      <div class="p-head">
+        <div>
+          <h2>All Notice / সব নোটিশ</h2>
+          <p class="sub" style="margin:0">Every notice stays saved here. Tap <b>×</b> to remove any notice.<span class="bn-note">সব নোটিশ এখানে জমা থাকে; চাইলে × চেপে কেটে দিতে পারেন।</span></p>
+        </div>
+        ${ROLE === 'M' ? `<button class="btn sm" onclick="go('nc')">+ Publish</button>` : ''}
+      </div>
+      <h3>📢 Manager Notices (${allNt.length})</h3>
+      ${ntHtml}
+    </div>
+    ${dutyNt ? `<div class="card"><h3>🛒 Bazar Duty Reminders</h3>${dutyNt}</div>` : ''}
+    <div class="card">
+      <h3>🔕 Mess Closure Notices (${allMo.length})</h3>
+      ${moHtml}
+    </div>
+  `);
+}
+
 const VIEWS = {
   rep: vRep,
   act: vAct,
@@ -1275,7 +1438,8 @@ const VIEWS = {
   db: vDB,
   nc: vNC,
   ms: vMS,
-  dir: vDir
+  dir: vDir,
+  allnt: vAllNotice
 };
 const typing = () => { const e = document.activeElement; return !!(e && /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && $('#v').contains(e)); };
 const rc = (fn, ...a) => {
