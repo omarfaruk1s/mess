@@ -7,13 +7,8 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif;background:var(--bg);color:var(--t);-webkit-tap-highlight-color:transparent;line-height:1.5}
 .bar{background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
-.bar b{font-size:18px;letter-spacing:-.2px}.bar small{opacity:.85;display:block;font-size:12px}
+.bar b{font-size:18px;letter-spacing:-.2px}.bar small{opacity:.88;display:block;font-size:12px}
 .bar button{background:#ffffff24;color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer}
-#balbar{background:#e6fffa;border-bottom:1px solid #99f6e4;padding:8px 14px;font-size:13px;color:#134e4a}
-.bb-in{max-width:600px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.bb-pill{background:#fff;border:1px solid #ccfbf1;border-radius:999px;padding:3px 10px;font-weight:700;font-size:12.5px}
-.bb-pill.pos{color:#166534;border-color:#bbf7d0;background:#f0fdf4}
-.bb-pill.neg{color:#991b1b;border-color:#fecaca;background:#fef2f2}
 #load{display:none;position:fixed;inset:0;background:#0f172a45;backdrop-filter:blur(3px);z-index:20;align-items:center;justify-content:center}
 #load .box{background:#fff;border-radius:18px;padding:20px 26px;text-align:center;box-shadow:0 10px 35px #0003;width:250px}
 #load .emo{font-size:40px;display:inline-block;animation:hop .55s ease-in-out infinite alternate}
@@ -23,22 +18,23 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans B
 @keyframes hop{from{transform:translateY(0)}to{transform:translateY(-10px)}}
 #tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:#fff;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:5;scrollbar-width:none}
 #tabs::-webkit-scrollbar{display:none}
-#tabs button{white-space:nowrap;border:1px solid var(--b);background:#f8fafc;color:#334155;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer}
+#tabs button{white-space:nowrap;border:1px solid var(--b);background:#f8fafc;color:#334155;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
 #tabs button.on{background:var(--g);border-color:var(--g);color:#fff;font-weight:600}
-.subtabs{display:flex;gap:6px;background:#e2e8f080;padding:4px;border-radius:12px;margin-bottom:12px;flex-wrap:wrap}
-.subtabs button{flex:1;min-width:90px;border:0;background:transparent;color:#475569;padding:8px 8px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer}
-.subtabs button.on{background:#fff;color:var(--g);box-shadow:0 1px 3px #0f172a18}
-.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.qbtn{background:#f0fdfa;border:1px solid #ccfbf1;color:var(--g2);border-radius:12px;padding:10px 6px;text-align:center;font-size:12.5px;font-weight:600;cursor:pointer}
-.qbtn span{display:block;font-size:20px;margin-bottom:4px}
+.optbar{display:flex;gap:7px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.optbar::-webkit-scrollbar{display:none}
+.optbtn{flex:1;min-width:fit-content;white-space:nowrap;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:12px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px #0f172a0a;transition:.15s}
+.optbtn.on{background:#f0fdfa;border-color:var(--g);color:var(--g2);box-shadow:0 2px 6px #0f766e1f}
+.hello-box{background:linear-gradient(135deg,#f0fdfa,#ffffff);border:1px solid #ccfbf1;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hello-box small{display:block;color:var(--m);font-size:12.5px}
 .wrap{max-width:600px;margin:0 auto;padding:12px}
 .card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px #0f172a12;border:1px solid #e2e8f080}
 h2{margin:0 0 4px;font-size:18px;font-weight:700}h3{margin:0 0 10px;font-size:15px;font-weight:700}
 .sub{color:var(--m);font-size:13px;margin:0 0 10px}
+.bn-note{display:block;color:#475569;font-size:12.5px;margin-top:3px;font-weight:400}
 label{display:block;margin:12px 0 5px;font-size:13px;font-weight:600;color:#334155}
 .hint{font-weight:400;color:var(--m);font-size:12px;margin-top:2px}
 input,select,textarea{width:100%;padding:10px 12px;font-size:15px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font-family:inherit}
-textarea{min-height:76px;resize:vertical}
+textarea{min-height:80px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:2px solid #5eead4;border-color:var(--g)}
 .btn{width:100%;background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:600;margin-top:14px;cursor:pointer}
 .btn.sec{background:#e2e8f0;color:#1e293b}.btn.red{background:var(--r)}.btn.sm{width:auto;padding:7px 12px;font-size:13px;margin:0}
@@ -68,11 +64,10 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
 .rep-sec{margin-top:16px;border:1px solid var(--b);border-radius:10px;overflow:hidden}
 .rep-sec h4{margin:0;padding:8px 12px;background:#f8fafc;font-size:13px;color:#334155;border-bottom:1px solid var(--b)}
 .rep-sec table td,.rep-sec table th{padding:8px 12px}
-@media print{#tabs,.subtabs,#balbar,.bar,button,#toast,#al,#modal,.no-print{display:none!important}.card{box-shadow:none;border:1px solid #cbd5e1}}
+@media print{#tabs,.optbar,.bar,button,#toast,#al,#modal,.no-print{display:none!important}.card{box-shadow:none;border:1px solid #cbd5e1}}
 </style></head><body>
 <div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><b id="lmsg">Loading...</b><span class="fun" id="lfun"></span><small id="lsub"></small></div></div>
 <div class="bar"><div><b id="title">Mess Manager</b><small id="me"></small></div><div style="display:flex;gap:8px;align-items:center"><button id="bell" class="ic" title="Requests" style="display:none" onclick="go('req')">🔔<i id="bc" style="display:none"></i></button><button id="out" style="display:none" onclick="logout()">Log out</button></div></div>
-<div id="balbar" style="display:none"></div>
 <div id="tabs" style="display:none"></div>
 <div class="wrap" id="al" style="padding-top:0;padding-bottom:0"></div>
 <div class="wrap" id="v"><div class="empty">Loading...</div></div>
@@ -112,8 +107,8 @@ const load = (d, msg) => {
     clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'Taking a moment, please wait...', 4000);
   } else { busy = 0; shown = 0; clearInterval(fun); clearTimeout(slow); el.style.display = 'none'; }
 };
-const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...', request: 'Sending request...', replyMgrReq: 'Sending reply...', boot: 'Logging in...'};
-const READ_ACTS = ['lists', 'reqs', 'adv', 'mo', 'nt', 'fines', 'mgrReqs'];
+const MSG = {save: 'Saving...', signup: 'Sending request...', login: 'Logging in...', setReturn: 'Saving...', request: 'Sending request...', boot: 'Logging in...'};
+const READ_ACTS = ['lists', 'reqs', 'adv', 'mo', 'nt'];
 const call = (fn, a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json())
   .then(j => { if (!j.ok) throw new Error(j.error); return j.data; })
   .catch(e => { throw new Error(/fetch|network/i.test(e.message) ? 'No internet connection. Please try again.' : e.message); });
@@ -129,9 +124,9 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp
 const wrap = h => { $('#v').innerHTML = h; window.scrollTo(0, 0); };
 const stamp = d => (d.t0 = Date.now(), d);
 let U, P, TOK, ROLE, I, NAMES = [], D, LM;
-let SUB = {mb: 'off', rp: 'pay', ent: 'dep', ops: 'duty', fin: 'mem'};
+let OPT = {meals: 'off', br: 'baz', ent: 'dep', md: 'duty'};
 
-// ---------- Auth & Session Security ----------
+// ---------- Auth & Session Security (sessionStorage + Server Signed Token) ----------
 const SK = 'mess_sess_v2';
 try { localStorage.removeItem('mess_session'); } catch (e) {}
 const loadSess = () => { try { const s = JSON.parse(sessionStorage.getItem(SK)); return s && s.U && /^\d{4}$/.test(s.P) && s.TOK ? s : null; } catch (e) { return null; } };
@@ -150,12 +145,11 @@ function start() {
 }
 
 function showLogin() {
-  $('#balbar').style.display = 'none';
-  wrap(`<div class="card"><h2>Welcome</h2><p class="sub">Log in with your name and 4-digit PIN</p>
-  <label>Select Account</label><select id="u"><option value="__manager">Mess Manager</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-  <label>4-Digit PIN</label><input id="p" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  wrap(`<div class="card"><h2>Welcome / স্বাগতম</h2><p class="sub">Log in with your name and 4-digit PIN<span class="bn-note">আপনার নাম এবং ৪ ডিজিটের পিন দিয়ে লগইন করুন।</span></p>
+  <label>Select Account / অ্যাকাউন্ট নির্বাচন করুন</label><select id="u"><option value="__manager">Mess Manager</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <label>4-Digit PIN / ৪ ডিজিট পিন</label><input id="p" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
   <button class="btn" onclick="login()">Log in</button>
-  <button class="link" onclick="showSignup()">New member? Create an account</button></div>`);
+  <button class="link" onclick="showSignup()">New member? Create an account (নতুন অ্যাকাউন্ট)</button></div>`);
 }
 
 function login() {
@@ -167,12 +161,12 @@ function login() {
 function doLogin(u, p, tok, silent) {
   U = u; P = p; TOK = tok;
   return run('boot', U, P, TOK).then(b => {
-    ROLE = b.role; TOK = b.token || TOK; I = stamp(b.init); ME = b.me; D = b.rep; VC = {};
+    ROLE = b.role; TOK = b.token || TOK; I = stamp(b.init); ME = b.me; VC = {};
     VC['me' + JSON.stringify([U, P, TOK])] = b.me;
     VC['report' + JSON.stringify([U, P, TOK])] = b.rep;
     $('#me').textContent = ROLE === 'M' ? 'Mess Manager' : U;
     $('#out').style.display = '';
-    saveSess(); buildTabs(); renderBalBar(); afterLogin(); go('rep');
+    saveSess(); buildTabs(); afterLogin(); go('rep');
   }).catch(e => {
     clearSess();
     if (!silent) return err(e);
@@ -181,10 +175,10 @@ function doLogin(u, p, tok, silent) {
 }
 
 function showSignup() {
-  wrap(`<div class="card"><h2>Create Account</h2><p class="sub">The manager will approve your request before you can log in.</p>
-  <label>Full Name</label><input id="sn" placeholder="e.g. Rahim Uddin">
-  <label>Mobile Number<div class="hint">11-digit Bangladeshi number (e.g. 017XXXXXXXX)</div></label><input id="sph" type="tel" inputmode="tel" maxlength="14" placeholder="017XXXXXXXX">
-  <label>Choose a 4-Digit PIN<div class="hint">You will use this PIN to log in.</div></label><input id="sp" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  wrap(`<div class="card"><h2>Create Account / নতুন অ্যাকাউন্ট</h2><p class="sub">The manager will approve your request before you can log in.<span class="bn-note">আবেদনের পর ম্যানেজার অ্যাপ্রুভ করলে লগইন করতে পারবেন।</span></p>
+  <label>Full Name / পুরো নাম</label><input id="sn" placeholder="e.g. Rahim Uddin">
+  <label>Mobile Number / মোবাইল নাম্বার<div class="hint">11-digit Bangladeshi number (e.g. 017XXXXXXXX)</div></label><input id="sph" type="tel" inputmode="tel" maxlength="14" placeholder="017XXXXXXXX">
+  <label>Choose a 4-Digit PIN / ৪ ডিজিট পিন<div class="hint">You will use this PIN to log in.</div></label><input id="sp" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
   <button class="btn" onclick="signReview()">Continue</button><button class="link" onclick="showLogin()">Back to log in</button></div>`);
 }
 
@@ -198,94 +192,61 @@ function signReview() {
   $('#sc').onclick = () => run('signup', n, p, ph).then(() => wrap(`<div class="card empty"><h2>Request Sent ✅</h2><p>Please wait for the manager to approve your account. Once approved, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to Log in</button></div>`)).catch(err);
 }
 
-// ---------- Top Balance Bar ----------
-function renderBalBar() {
-  const el = $('#balbar');
-  if (!ROLE) { el.style.display = 'none'; return; }
-  el.style.display = '';
-  if (ROLE !== 'M') {
-    const x = D && D.ok && D.m && D.m[U];
-    if (!x) {
-      el.innerHTML = `<div class="bb-in"><span><b>${esc(U)}</b></span><span class="bb-pill">Cycle Not Started</span></div>`;
-      return;
-    }
-    const pos = x.bal >= 0;
-    el.innerHTML = `<div class="bb-in">
-      <span>Rate: <b>${tk(D.rate)}</b> · Meals: <b>${x.meals + x.guest}</b>${x.fine ? ` · Fine: <b>${tk(x.fine)}</b>` : ''}</span>
-      <span class="bb-pill ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}${tk(Math.abs(x.bal))} ${pos ? 'Receivable' : 'Payable'}</span>
-    </div>`;
-  } else {
-    const cashInHand = D && D.ok ? (D.td - D.tb) : 0;
-    const pend = ME.pending || 0;
-    el.innerHTML = `<div class="bb-in">
-      <span>Deposit: <b>${tk((D && D.td) || 0)}</b> · Bazar: <b>${tk((D && D.tb) || 0)}</b> · Net: <b>${tk(cashInHand)}</b></span>
-      <span class="bb-pill ${pend > 0 ? 'neg' : 'pos'}" onclick="go('req')" style="cursor:pointer">Pending: ${pend}</span>
-    </div>`;
-  }
-}
-
-// ---------- Organized 5 (Member) & 6 (Manager) Tabs ----------
+// ---------- Category Tabs + Top Option Buttons Inside Tab ----------
 function buildTabs() {
   const t = ROLE === 'M'
     ? [
         ['rep', 'Report'],
-        ['req', 'Requests & Fine'],
-        ['ent', 'Deposits & Bazar'],
-        ['ops', 'Members & Duty'],
-        ['set', 'Notices & Settings'],
+        ['req', 'Requests'],
+        ['ent', 'Entries'],
+        ['md', 'Mess & Duty'],
         ['dir', 'Contacts']
       ]
     : [
         ['rep', 'Report'],
-        ['mb', 'Meals & Bazar'],
-        ['pay', 'Requests & Pay'],
-        ['ntv', 'Notices & Rules'],
+        ['meals', 'Meals'],
+        ['br', 'Bazar & Req'],
         ['dir', 'Contacts']
       ];
   $('#tabs').style.display = '';
   $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
 }
 
-function go(t, sub) {
-  if (sub) {
-    if (t === 'mb') SUB.mb = sub;
-    if (t === 'pay') SUB.rp = sub;
-    if (t === 'ent') SUB.ent = sub;
-    if (t === 'ops') SUB.ops = sub;
-  }
+function go(t, optKey, optVal) {
+  if (optKey && optVal) OPT[optKey] = optVal;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.id === 't_' + t));
-  CUR = t; if (t !== 'pay') PRE = null; VIEWS[t]();
+  CUR = t; if (optVal !== 'pay') PRE = null; VIEWS[t]();
 }
 
-function subBar(group, items) {
-  return `<div class="subtabs">${items.map(x => `<button class="${SUB[group] === x[0] ? 'on' : ''}" onclick="SUB['${group}']='${x[0]}';VIEWS[CUR]()">${x[1]}</button>`).join('')}</div>`;
+function optBar(group, items) {
+  return `<div class="optbar">${items.map(x => `<button class="optbtn ${OPT[group] === x[0] ? 'on' : ''}" onclick="OPT['${group}']='${x[0]}';VIEWS[CUR]()">${x[1]}</button>`).join('')}</div>`;
+}
+
+function greetCard(titleEn, subBn) {
+  return `<div class="hello-box"><div><b>${esc(titleEn)}</b><small>${esc(subBn)}</small></div><span class="badge pos">${fmt(I.today)}</span></div>`;
 }
 
 // ---------- Forms (Meal Off, Guest, Bazar, Deposit) ----------
 const FORMS = {
-  off: ['Meal Off', 'Turn off your meals when away. Duplicate meal-off for the same meal is blocked.', [
-    ['offDate', 'Meal Off From (Date)', 'date'], ['offShift', 'Starting Shift', 'shift'],
-    ['onDate', 'Meal On Again (Date - Optional)', 'date?', 'Leave blank if return date is unknown; you can turn it on later.'], ['onShift', 'Starting Shift', 'shift']]],
-  guest: ['Guest Meal', 'Record meals eaten by your guests.', [
-    ['date', 'Date', 'date'], ['shift', 'Shift', 'shift'], ['count', 'Number of Guests', 'number', 'e.g. 2']]],
-  baz: ['Bazar Expense', 'Record bazar you purchased for the mess.', [
-    ['date', 'Date', 'date'], ['amount', 'Amount (৳)', 'number', 'e.g. 500'], ['items', 'Items Bought (Optional)', 'text', 'e.g. Rice, Fish, Vegetables']]],
-  dep: ['Deposit Entry', 'Record deposit received from a member.', [
-    ['date', 'Date', 'date'], ['amount', 'Amount (৳)', 'number', 'e.g. 3000'],
-    ['method', 'Payment Method', 'method'], ['paidTo', 'Paid To', 'paidTo'],
-    ['note', 'Note / Reference (Optional)', 'text', 'e.g. TrxID or cash note']]]
+  off: ['Meal Off / মিল বন্ধ', 'Turn off your meals when away. Duplicate meal-off for the same meal is blocked.<span class="bn-note">যাওয়ার আগে মিল বন্ধ করুন। একই বেলার মিল দুবার বন্ধ করা যাবে না।</span>', [
+    ['offDate', 'Meal Off From (Date) / কবে থেকে বন্ধ', 'date'], ['offShift', 'Starting Shift / কোন বেলা থেকে', 'shift'],
+    ['onDate', 'Meal On Again (Date - Optional) / কবে চালু হবে', 'date?', 'Leave blank if return date is unknown; you can turn it on later.'], ['onShift', 'Starting Shift / কোন বেলা থেকে চালু', 'shift']]],
+  guest: ['Guest Meal / গেস্ট মিল', 'Record meals eaten by your guests.<span class="bn-note">আপনার গেস্টের মিলের হিসাব যুক্ত করুন।</span>', [
+    ['date', 'Date / তারিখ', 'date'], ['shift', 'Shift / বেলা', 'shift'], ['count', 'Number of Guests / গেস্ট সংখ্যা', 'number', 'e.g. 2']]],
+  baz: ['Bazar Expense / বাজার খরচ', 'Record bazar you purchased for the mess.<span class="bn-note">মেসের জন্য করা বাজারের খরচ ও বিবরণ লিখুন।</span>', [
+    ['date', 'Date / তারিখ', 'date'], ['amount', 'Amount (৳) / টাকার পরিমাণ', 'number', 'e.g. 500'], ['items', 'Items Bought (Optional) / বাজারের আইটেম', 'text', 'e.g. Rice, Fish, Vegetables']]],
+  dep: ['Deposit Entry / টাকা জমা', 'Record cash/mobile deposit received from a member.<span class="bn-note">মেম্বারের কাছ থেকে পাওয়া জমার হিসাব লিখুন।</span>', [
+    ['date', 'Date / তারিখ', 'date'], ['amount', 'Amount (৳) / টাকার পরিমাণ', 'number', 'e.g. 3000'], ['note', 'Note (Optional) / নোট', 'text', 'e.g. Cash / bKash / Nagad']]]
 };
-
 function inp(k, l, t, h) {
+  const ty = t.startsWith('date') ? 'date' : t === 'number' ? 'number' : 'text';
   const hint = h ? `<div class="hint">${h}</div>` : '';
   const minAttr = (k === 'offDate' || k === 'onDate') ? `min="${I.today}"` : '';
-  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select>`;
-  if (t === 'method') return `<label>${l}</label><select id="f_${k}"><option>Cash</option><option>bKash</option><option>Nagad</option><option>Bank</option></select>`;
-  if (t === 'paidTo') return `<label>${l}</label><select id="f_${k}"><option value="Manager">Mess Manager</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>`;
-  const ty = t.startsWith('date') ? 'date' : t === 'number' ? 'number' : 'text';
+  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">${SH.L} (লাঞ্চ)</option><option value="D">${SH.D} (ডিনার)</option></select>`;
   return `<label>${l}${hint}</label><input id="f_${k}" type="${ty}" ${t === 'date' ? `value="${I.today}"` : ''} ${minAttr} ${ty === 'number' ? 'inputmode="decimal" min="0"' : ''}>`;
 }
 
+// Rule Box (English + Bangla for Meal-Off Deadlines)
 const hm = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
 function ruleBox() {
   const k = I.rules, n = hm(k.now) + Math.floor((Date.now() - I.t0) / 60000);
@@ -306,18 +267,18 @@ function ruleBox() {
   return `<div class="alert info" style="margin:0 0 8px"><div>
     <b>Meal-Off Deadlines & Rules:</b><br>
     • Today's Lunch: before <b>${enTime(k.lunch)}</b> | Today's Dinner: before <b>${enTime(k.dinner)}</b><br>
-    • Tomorrow's Lunch: before <b>${enTime(k.nextLunch)}</b> tonight<br>
+    • Tomorrow's Lunch: before <b>${enTime(k.nextLunch)}</b> tonight (cook prepares based on night count)<br>
     • Past dates cannot be turned off or on.<br>
     <b>${statusEn}</b>
-    <span class="bn-sub">নিয়মাবলি: আজকের লাঞ্চ <b>${bnTime(k.lunch)}</b>, আজকের ডিনার <b>${bnTime(k.dinner)}</b> এবং আগামীকালের লাঞ্চ আজ <b>${bnTime(k.nextLunch)}</b>-এর মধ্যে বন্ধ করতে হবে। গত দিনের মিল বন্ধ বা চালু করা যাবে না।<br>${statusBn}</span>
+    <span class="bn-sub">নিয়মাবলি: আজকের লাঞ্চ <b>${bnTime(k.lunch)}</b>, আজকের ডিনার <b>${bnTime(k.dinner)}</b> এবং আগামীকালের লাঞ্চ আজ <b>${bnTime(k.nextLunch)}</b>-এর মধ্যে বন্ধ করতে হবে (কারণ বুয়া রাতেই সংখ্যা জেনে রান্না করেন)। গত দিনের মিল বন্ধ বা চালু করা যাবে না।<br>${statusBn}</span>
   </div></div>`;
 }
 
-function form(type, topHtml = '', extraHtml = '') {
+function form(type, topHtml = '', showOffExtras = false) {
   const [title, sub, fs] = FORMS[type];
   const mem = ROLE === 'M' ? `<label>Member</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
-  wrap(`${topHtml}<div id="off_ok_box"></div><div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${type === 'off' && ROLE === 'U' ? ruleBox() : ''}${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div><div id="offl"></div>${extraHtml}`);
-  if (type === 'off' && ROLE === 'U') offList();
+  wrap(`${topHtml}<div id="off_ok_box"></div><div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${type === 'off' && ROLE === 'U' ? ruleBox() : ''}${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div>${showOffExtras ? '<div id="offl"></div>' : ''}`);
+  if (showOffExtras && ROLE === 'U') offList();
 }
 
 function review(type) {
@@ -327,13 +288,11 @@ function review(type) {
   const need = fs.filter(x => x[2] === 'date' || x[2] === 'number');
   if (need.some(x => !d[x[0]] || (x[2] === 'number' && !(Number(d[x[0]]) > 0)))) return toast('Please fill in all required fields', 1);
   const val = x => x[2] === 'shift' ? SH[d[x[0]]] : x[2].startsWith('date') ? (d[x[0]] ? fmt(d[x[0]]) : '-') : x[2] === 'number' && x[0] === 'amount' ? tk(d[x[0]]) : (d[x[0]] || '-');
-  const rows = [['Member', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].replace(/\s*\(.*\)/, ''), val(x)]));
-  wrap(`<div class="card"><h3>Please Confirm Details</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
+  const rows = [['Member', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].split(' / ')[0].replace(/\s*\(.*\)/, ''), val(x)]));
+  wrap(`<div class="card"><h3>Please Confirm Details / তথ্য যাচাই করুন</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
   <button class="btn" id="cf">Confirm</button><button class="btn sec" onclick="VIEWS[CUR]()">Edit</button></div>`);
-  $('#cf').onclick = () => run('save', U, P, type, d, TOK).then(async res => {
+  $('#cf').onclick = () => run('save', U, P, type, d, TOK).then(res => {
     toast('Saved successfully');
-    D = await runQ('report', U, P, TOK).catch(() => D);
-    renderBalBar();
     VIEWS[CUR]();
     if (type === 'off') {
       const cp = (res && res.cookPhone) || (ME.contacts && ME.contacts.cookPhone) || I.cookPhone || '';
@@ -354,8 +313,8 @@ function review(type) {
 
 function offHtml(l) {
   const open = l.filter(r => !r[5]);
-  return `${open.map(r => `<div class="card"><h3>Meal Off since ${fmt(r[3])} (${SH[r[4]]})</h3><p class="sub">Turn your meals back on when you return.</p><div class="flex"><input type="date" id="r_${r[0]}" min="${I.today}" value="${I.today}"><select id="s_${r[0]}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select></div><button class="btn" onclick="ret('${r[0]}')">Turn Meal On</button></div>`).join('')}
-  <div class="card"><h3>My Meal-Off History</h3>${l.length ? `<table><tr><th>Off From</th><th>On Again</th></tr>${l.slice(0, 12).map(r => `<tr><td>${fmt(r[3])} · ${SH[r[4]]}</td><td>${r[5] ? fmt(r[5]) + ' · ' + SH[r[6]] : '<span class="badge warn">Currently Off</span>'}</td></tr>`).join('')}</table>` : '<div class="empty">No meal-off entries yet</div>'}</div>`;
+  return `${open.map(r => `<div class="card"><h3>Meal Off since ${fmt(r[3])} (${SH[r[4]]})</h3><p class="sub">Turn your meals back on when you return (past dates or passed deadlines cannot be selected).<span class="bn-note">ফিরে এলে এখান থেকে মিল চালু করতে পারবেন।</span></p><div class="flex"><input type="date" id="r_${r[0]}" min="${I.today}" value="${I.today}"><select id="s_${r[0]}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select></div><button class="btn" onclick="ret('${r[0]}')">Turn Meal On</button></div>`).join('')}
+  <div class="card"><h3>My Meal-Off History / আমার মিল বন্ধের তালিকা</h3>${l.length ? `<table><tr><th>Off From</th><th>On Again</th></tr>${l.slice(0, 12).map(r => `<tr><td>${fmt(r[3])} · ${SH[r[4]]}</td><td>${r[5] ? fmt(r[5]) + ' · ' + SH[r[6]] : '<span class="badge warn">Currently Off</span>'}</td></tr>`).join('')}</table>` : '<div class="empty">No meal-off entries yet</div>'}</div>`;
 }
 function offList() {
   const k = 'myOffs' + U, draw = l => { const e = $('#offl'); if (e) e.innerHTML = offHtml(l); };
@@ -366,22 +325,25 @@ function ret(id) {
   run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value, TOK).then(() => { toast('Meal turned back on'); VIEWS[CUR](); }).catch(err);
 }
 
-// ---------- Member Tab 2: Meals & Bazar ----------
-function vMB() {
-  const top = subBar('mb', [['off', 'Meal Off'], ['guest', 'Guest Meal'], ['baz', 'Bazar Entry']]);
-  if (SUB.mb === 'guest') return form('guest', top);
-  if (SUB.mb === 'baz') return form('baz', top);
-  return form('off', top);
+// ---------- Member Tab 2: Meals (Buttons: Meal Off | Guest Meal | Today's Meals) ----------
+function vMeals() {
+  const bar = greetCard(`Hi ${U}, manage your meals`, 'মিল বন্ধ/চালু, গেস্ট মিল অথবা আজকের মিল দেখুন')
+    + optBar('meals', [['off', '⏸️ Meal Off'], ['guest', '🍽️ Guest Meal'], ['day', "📅 Today's Meals"]]);
+  if (OPT.meals === 'guest') return form('guest', bar, false);
+  if (OPT.meals === 'day') {
+    wrap(`${bar}<div class="card"><h2>Daily Meal Count / আজকের মিল</h2><p class="sub">See who is eating on any date.<span class="bn-note">যেকোনো তারিখের লাঞ্চ ও ডিনারের মিল দেখুন।</span></p><label>Date</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`);
+    return loadDay();
+  }
+  return form('off', bar, true);
 }
 
-// ---------- Today's Meals Helper ----------
 function drawDay(d) {
   if (!$('#dr')) return;
   $('#dr').innerHTML = !d.ok ? '<div class="empty">The mess has not started yet.</div>' : ['L', 'D'].map(s => {
-    if (d.cl && d.cl[s]) return `<h3 style="margin-top:14px">${SH[s]}</h3><div class="alert red" style="margin:0">Mess is closed for this meal.</div>`;
+    if (d.cl && d.cl[s]) return `<h3 style="margin-top:16px">${SH[s]}</h3><div class="alert red" style="margin:0">Mess is closed for this meal.</div>`;
     const g = d['g' + s.toLowerCase()];
-    return `<h3 style="margin-top:14px">${SH[s]} · ${d[s].length + g} Meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${g} Guest</span>` : ''}</div>`;
-  }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:14px">Frozen (Unpaid Dues)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
+    return `<h3 style="margin-top:16px">${SH[s]} · ${d[s].length + g} Meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${g} Guest</span>` : ''}</div>`;
+  }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:16px">Frozen (Unpaid Dues)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
 }
 function loadDay() {
   const dt = $('#dd').value, k = 'daily' + dt, hit = VC[k], ok = () => $('#dr') && $('#dd') && $('#dd').value === dt;
@@ -389,10 +351,19 @@ function loadDay() {
   call('daily', [dt]).then(d => { VC[k] = d; if (!hit) load(-1); if (ok()) drawDay(d); }).catch(e => { if (!hit) load(-1); err(e); });
 }
 
-// ---------- Report & Bazar Rotation Tracker ----------
+// ---------- Member Tab 3: Bazar & Requests (Buttons: Add Bazar | Duty | Payment | Grace/Req | History) ----------
+async function vBR() {
+  const bar = greetCard('Bazar, Duty & Requests', 'বাজার এন্ট্রি, ডিউটি শিডিউল ও রিকোয়েস্ট পাঠান')
+    + optBar('br', [['baz', '🛒 Add Bazar'], ['duty', '📋 Duty'], ['pay', '💳 Payment'], ['req', '✉️ Request'], ['hist', '🕒 History']]);
+  if (OPT.br === 'baz') return form('baz', bar, false);
+  if (OPT.br === 'duty') return vDuty(bar);
+  return vPay(bar, OPT.br);
+}
+
+// ---------- Report ----------
 async function vRep() {
   let d; try { d = await rc('report', U, P, TOK); } catch (e) { return err(e); }
-  D = d; renderBalBar();
+  D = d;
   if (!d.ok) return wrap('<div class="card empty"><h2>Mess Not Started</h2><p>The manager has not started the mess cycle yet.</p></div>');
   NAMES = Object.keys(d.m);
 
@@ -402,49 +373,40 @@ async function vRep() {
       <span class="badge ${d.cfg.End ? 'gray' : 'pos'}">${d.cfg.End ? 'Closed' : 'Active'}</span>
     </div>
     <div class="tiles">
-      <div class="tile"><span>Total Bazar</span><b>${tk(d.tb)}</b></div>
-      <div class="tile"><span>Total Meals</span><b>${f(d.tm)}</b></div>
-      <div class="tile"><span>Meal Rate</span><b>${tk(d.rate)}</b></div>
-      <div class="tile"><span>Fixed Bills</span><b>${tk(d.fixed)}</b></div>
-      <div class="tile"><span>Total Deposits</span><b>${tk(d.td)}</b></div>
-      <div class="tile"><span>Fines Imposed</span><b>${tk(d.totalFines || 0)}</b></div>
+      <div class="tile"><span>Total Bazar / মোট বাজার</span><b>${tk(d.tb)}</b></div>
+      <div class="tile"><span>Total Meals / মোট মিল</span><b>${f(d.tm)}</b></div>
+      <div class="tile"><span>Meal Rate / মিল রেট</span><b>${tk(d.rate)}</b></div>
+      <div class="tile"><span>Fixed Bills / ফিক্সড বিল</span><b>${tk(d.fixed)}</b></div>
+      <div class="tile"><span>Total Deposits / মোট জমা</span><b>${tk(d.td)}</b></div>
+      <div class="tile"><span>Active Members / মেম্বার</span><b>${d.cnt}</b></div>
     </div>
   </div>`;
 
   const bazBoard = `<div class="card">
-    <h3>Bazar Participation Summary</h3>
-    <p class="sub">Number of bazar entries & total spent per member in this cycle.</p>
-    <table><tr><th>Member</th><th>Days</th><th>Spent</th></tr>
-      ${(d.bazarSummary || []).map(b => `<tr><td><b>${esc(b.name)}</b></td><td><span class="badge ${b.days > 0 ? 'pos' : 'gray'}">${b.days}d</span></td><td><b>${tk(b.spent || 0)}</b></td></tr>`).join('')}
+    <h3>Bazar Duty Participation / বাজারের দিন</h3>
+    <p class="sub">Number of days each member has done bazar in this cycle.</p>
+    <table><tr><th>Member</th><th>Bazar Days</th></tr>
+      ${(d.bazarSummary || []).map(b => `<tr><td><b>${esc(b.name)}</b></td><td><span class="badge ${b.days > 0 ? 'pos' : 'gray'}">${b.days} ${b.days === 1 ? 'day' : 'days'}</span></td></tr>`).join('')}
     </table>
   </div>`;
 
   if (ROLE !== 'M') return wrap(sum + detail(0) + bazBoard);
 
-  const todayCard = `<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <h3 style="margin:0">Today's Meals</h3>
-      <input type="date" id="dd" value="${I.today}" onchange="loadDay()" style="width:auto;padding:5px 8px;font-size:13px">
-    </div>
-    <div id="dr"></div>
-  </div>`;
-
-  wrap(sum + todayCard + `<div class="card"><h3>Member Statements</h3><p class="sub">Select a member to view or print their detailed statement.</p>
+  wrap(sum + `<div class="card"><h3>Member Statements</h3><p class="sub">Select a member to view or print their detailed statement.</p>
     ${NAMES.map((n, i) => {
       const x = d.m[n], p = x.bal >= 0;
       return `<div class="row" onclick="openMember(${i})">
-        <div><b>${esc(n)}</b><small>${x.meals + x.guest} meals · Cost ${tk(x.cost)}${x.fine ? ` · Fine ${tk(x.fine)}` : ''}${x.blocked ? ' · <span style="color:#dc2626">Frozen</span>' : ''}</small></div>
+        <div><b>${esc(n)}</b><small>${x.meals + x.guest} meals · Total Cost ${tk(x.cost)}${x.blocked ? ' · <span style="color:#dc2626">Frozen</span>' : ''}</small></div>
         <span class="badge ${p ? 'pos' : 'neg'}">${p ? 'Receivable' : 'Payable'} ${tk(Math.abs(x.bal))}</span>
       </div>`;
     }).join('') || '<div class="empty">No active members</div>'}
   </div>` + bazBoard);
-  loadDay();
 }
 
-function openMember(i) { wrap(`<button class="btn sec sm no-print" style="margin-bottom:12px" onclick="vRep()">← Back to Report</button>` + detail(i)); }
+function openMember(i) { wrap(`<button class="btn sec sm no-print" style="margin-bottom:12px" onclick="vRep()">← Back to All Members</button>` + detail(i)); }
 
 function detail(i) {
-  const n = NAMES[i], x = D.m[n], p = x.bal >= 0, exp = x.mealCost + x.share + (x.fine || 0);
+  const n = NAMES[i], x = D.m[n], p = x.bal >= 0, exp = x.mealCost + x.share;
   const prevRow = x.open > 0
     ? `<tr><td>Previous Month Surplus</td><td style="color:#166534">+${tk(x.open)}</td></tr>`
     : x.open < 0
@@ -455,10 +417,6 @@ function detail(i) {
     ? D.bills.map(b => `<tr><td>${esc(b[0])} (1/${D.cnt} share)</td><td>${tk(D.cnt ? b[1] / D.cnt : 0)}</td></tr>`).join('') + `<tr style="background:#f8fafc"><td><b>Total Fixed Bill Share</b></td><td><b>${tk(x.share)}</b></td></tr>`
     : `<tr><td>No fixed bills</td><td>${tk(0)}</td></tr>`;
 
-  const fineRow = (x.fine || 0) > 0
-    ? `<tr><td>Fines Imposed (${x.fl.length})</td><td style="color:#991b1b">+${tk(x.fine)}</td></tr>`
-    : `<tr><td>Fines Imposed</td><td>${tk(0)}</td></tr>`;
-
   return `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--b);padding-bottom:10px">
       <div><h2 style="margin:0">${esc(n)}</h2><p class="sub" style="margin:2px 0 0">Statement Period: ${fmt(D.cfg.Start)} to ${D.cfg.End ? fmt(D.cfg.End) : 'Today'}</p></div>
@@ -466,16 +424,15 @@ function detail(i) {
     </div>
 
     <div class="banner ${p ? 'pos' : 'neg'}">
-      <span>${p ? 'Amount to Receive Back' : 'Amount Due to Pay'}</span>
+      <span>${p ? 'Amount to Receive Back (পাবেন)' : 'Amount Due to Pay (দিবেন)'}</span>
       <b>${tk(Math.abs(x.bal))}</b>
     </div>
 
-    <div class="rep-sec"><h4>1. Meal, Bill & Fine Breakdown</h4>
+    <div class="rep-sec"><h4>1. Meal & Expense Breakdown</h4>
       <table>
         <tr><td>Regular Meals (${x.meals}) + Guest Meals (${x.guest})</td><td><b>${x.meals + x.guest} meals</b></td></tr>
         <tr><td>Meal Cost (${x.meals + x.guest} × ${tk(D.rate)})</td><td><b>${tk(x.mealCost)}</b></td></tr>
         ${billsRows}
-        ${fineRow}
         <tr style="background:#f1f5f9"><td><b>Total Monthly Expense</b></td><td><b>${tk(exp)}</b></td></tr>
       </table>
     </div>
@@ -490,9 +447,8 @@ function detail(i) {
       </table>
     </div>
 
-    ${x.fl && x.fl.length ? `<div class="rep-sec"><h4>3. Fine Details</h4><table><tr><th>Date</th><th>Reason</th><th>Amount</th></tr>${x.fl.map(r => `<tr><td>${fmt(r[0])}</td><td>${esc(r[2])}</td><td>${tk(r[1])}</td></tr>`).join('')}</table></div>` : ''}
-    ${x.bl.length ? `<div class="rep-sec"><h4>4. Bazar Log (${x.bl.length} days)</h4><table><tr><th>Date</th><th>Items</th><th>Amount</th></tr>${x.bl.map(r => `<tr><td>${fmt(r[0])}</td><td>${esc(r[2]) || '-'}</td><td>${tk(r[1])}</td></tr>`).join('')}</table></div>` : ''}
-    ${x.dl.length ? `<div class="rep-sec"><h4>5. Deposit Log</h4><table><tr><th>Date</th><th>Amount</th></tr>${x.dl.map(r => `<tr><td>${fmt(r[0])}</td><td>${tk(r[1])}</td></tr>`).join('')}</table></div>` : ''}
+    ${x.bl.length ? `<div class="rep-sec"><h4>3. Bazar Log (${x.bl.length} days)</h4><table><tr><th>Date</th><th>Items</th><th>Amount</th></tr>${x.bl.map(r => `<tr><td>${fmt(r[0])}</td><td>${esc(r[2]) || '-'}</td><td>${tk(r[1])}</td></tr>`).join('')}</table></div>` : ''}
+    ${x.dl.length ? `<div class="rep-sec"><h4>4. Deposit Log</h4><table><tr><th>Date</th><th>Amount</th></tr>${x.dl.map(r => `<tr><td>${fmt(r[0])}</td><td>${tk(r[1])}</td></tr>`).join('')}</table></div>` : ''}
 
     <div class="flex no-print" style="margin-top:14px">
       <button class="btn" style="margin:0" onclick="share(${i})">Copy Summary</button>
@@ -502,12 +458,11 @@ function detail(i) {
 }
 
 function share(i) {
-  const n = NAMES[i], x = D.m[n], exp = x.mealCost + x.share + (x.fine || 0);
+  const n = NAMES[i], x = D.m[n], exp = x.mealCost + x.share;
   const t = [
     `*${n} - Mess Statement* (${fmt(D.cfg.Start)} to ${D.cfg.End ? fmt(D.cfg.End) : 'Today'})`,
     `Meals: ${x.meals + x.guest} × ${tk(D.rate)} = ${tk(x.mealCost)}`,
     `Fixed Bills Share: ${tk(x.share)}`,
-    x.fine ? `Fines: ${tk(x.fine)}` : '',
     `Total Expense: ${tk(exp)}`,
     `Deposits: ${tk(x.dep)} | Bazar Spent: ${tk(x.bazar)} (${x.bl.length} days)`,
     x.open ? `Previous Balance: ${x.open > 0 ? '+' : '-'}${tk(Math.abs(x.open))}` : '',
@@ -521,6 +476,7 @@ async function vDir() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
   const c = ME.contacts || { managerName: 'Mess Manager', managerPhone: '', cookPhone: '', members: [] };
   wrap(`
+    ${greetCard('Contacts Directory', 'ম্যানেজার, বুয়া ও মেম্বারদের জরুরি যোগাযোগ')}
     <div class="card">
       <h2>Mess Contacts Directory</h2>
       <p class="sub">Direct phone numbers for urgent issues, meal changes, or mess coordination.</p>
@@ -550,73 +506,44 @@ async function vDir() {
   `);
 }
 
-// ---------- Manager Helpers ----------
+// ---------- Manager Tabs with Option Buttons Inside ----------
 const M = (act, d) => READ_ACTS.indexOf(act) >= 0 ? rc('mgr', U, P, act, d, TOK) : run('mgr', U, P, act, d, TOK);
 
-// ---------- Manager Tab 3: Deposits & Bazar + Logs ----------
-async function vEnt() {
-  const top = subBar('ent', [['dep', 'Deposit'], ['baz', 'Bazar'], ['off', 'Meal Off'], ['guest', 'Guest'], ['logs', 'Logs']]);
-  if (SUB.ent === 'baz') return form('baz', top);
-  if (SUB.ent === 'off') return form('off', top);
-  if (SUB.ent === 'guest') return form('guest', top);
-  if (SUB.ent === 'dep') return form('dep', top);
+function vEnt() {
+  const bar = greetCard('Entries & Logs', 'জমা, বাজার, মিল অফ, গেস্ট মিল বা পুরোনো এন্ট্রি দেখুন')
+    + optBar('ent', [['dep', '💵 Deposit'], ['baz', '🛒 Bazar'], ['off', '⏸️ Meal Off'], ['guest', '🍽️ Guest'], ['logs', '🗂️ Logs']]);
+  if (OPT.ent === 'baz') return form('baz', bar, false);
+  if (OPT.ent === 'off') return form('off', bar, false);
+  if (OPT.ent === 'guest') return form('guest', bar, false);
+  if (OPT.ent === 'logs') return vLogs(bar);
+  return form('dep', bar, false);
+}
 
+async function vLogs(bar) {
   let e; try { e = (await M('lists')).ent; } catch (x) { return err(x); }
   const T = {MealOff: 'Meal Off', Guests: 'Guest Meals', Bazar: 'Bazar', Deposits: 'Deposits'};
   const cell = v => /^\d{4}-\d{2}-\d{2}$/.test(v) ? fmt(v) : v === 'L' ? SH.L : v === 'D' ? SH.D : esc(v);
-  wrap(top + Object.keys(e).map(k => `<div class="card"><h3>${T[k]}</h3>${e[k].length ? `<table>${e[k].map(r => `<tr><td>${r.slice(2).filter(v => v !== '').map(cell).join(' · ')}</td><td><button class="btn sm red" onclick="del('${k}','${r[0]}')">Delete</button></td></tr>`).join('')}</table>` : '<div class="empty">No entries</div>'}</div>`).join(''));
+  wrap(bar + Object.keys(e).map(k => `<div class="card"><h3>${T[k]}</h3>${e[k].length ? `<table>${e[k].map(r => `<tr><td>${r.slice(2).filter(v => v !== '').map(cell).join(' · ')}</td><td><button class="btn sm red" onclick="del('${k}','${r[0]}')">Delete</button></td></tr>`).join('')}</table>` : '<div class="empty">No entries</div>'}</div>`).join(''));
 }
 const del = (s, id) => confirm('Delete this entry?') && M('del', {sheet: s, id: id}).then(() => { toast('Deleted'); vEnt(); }).catch(err);
 
-// ---------- Manager Tab 4: Members & Duty (with Completed / Running / Upcoming Rotation) ----------
-async function vOps() {
-  const top = subBar('ops', [['duty', 'Bazar Duty'], ['mem', 'Members'], ['bills', 'Bills & Advance']]);
-  if (SUB.ops === 'mem') return vMem(top);
-  if (SUB.ops === 'bills') return vBillsAdv(top);
-
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
-  const t = ME.today, l = ME.duties || [];
-  const completed = l.filter(d => d[3] < t).reverse();
-  const running = l.filter(d => d[2] <= t && d[3] >= t);
-  const upcoming = l.filter(d => d[2] > t);
-
-  wrap(`${top}
-  <div class="card"><h3>Assign Bazar Duty</h3>
-    <label>Member</label><select id="dm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <div class="flex"><div><label>From</label><input type="date" id="df" value="${t}"></div><div><label>To</label><input type="date" id="dt" value="${t}"></div></div>
-    <button class="btn" onclick="dutyAdd()">Add to Schedule</button>
-  </div>
-
-  <div class="card"><h3>🟢 Running Bazar (${running.length})</h3>
-    ${running.length ? running.map(d => `<div class="row" style="cursor:default">
-      <div><b>${esc(d[1])}</b><small>${fmt(d[2])} to ${fmt(d[3])} · Running <b>${d[5] || 1} day(s)</b> · Entries: ${d[4] || 0}</small></div>
-      <div class="flex" style="flex:0 0 auto"><span class="badge pos">${d[5] || 1}d Running</span><button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button></div>
-    </div>`).join('') : '<div class="empty">No active bazar duty right now</div>'}
-  </div>
-
-  <div class="card"><h3>🟡 Upcoming Bazar Rotation (${upcoming.length})</h3>
-    ${upcoming.length ? upcoming.map(d => `<div class="row" style="cursor:default">
-      <div><b>${esc(d[1])}</b><small>${fmt(d[2])} to ${fmt(d[3])}</small></div>
-      <div class="flex" style="flex:0 0 auto"><span class="badge warn">In ${dayGap(t, d[2])}d</span><button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button></div>
-    </div>`).join('') : '<div class="empty">No upcoming duties scheduled</div>'}
-  </div>
-
-  <div class="card"><h3>✅ Completed Bazar (${completed.length})</h3>
-    ${completed.length ? completed.map(d => `<div class="row" style="cursor:default">
-      <div><b>${esc(d[1])}</b><small>${fmt(d[2])} to ${fmt(d[3])} · Bazar logged: ${d[4] || 0} time(s)</small></div>
-      <div class="flex" style="flex:0 0 auto"><span class="badge gray">Completed</span><button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button></div>
-    </div>`).join('') : '<div class="empty">No completed duties yet</div>'}
-  </div>`);
+function vMD() {
+  const bar = greetCard('Mess & Duty Management', 'ডিউটি, নোটিশ, মেস বন্ধ, অ্যাডভান্স, মেম্বার ও সেটিংস')
+    + optBar('md', [['duty', '📋 Duty'], ['ann', '📢 Notice & Close'], ['adv', '💰 Advance'], ['mem', '👥 Members'], ['bill', '🧾 Bills'], ['mess', '⚙️ Settings']]);
+  if (OPT.md === 'ann') return vAnn(bar);
+  if (OPT.md === 'adv') return vAdv(bar);
+  if (OPT.md === 'mem') return vMem(bar);
+  if (OPT.md === 'bill') return vBill(bar);
+  if (OPT.md === 'mess') return vMess(bar);
+  return vDuty(bar);
 }
-const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('Please enter valid dates', 1); M('dutyAdd', d).then(() => { toast('Duty added'); vOps(); }).catch(err); };
-const dutyDel = id => confirm('Remove this duty?') && M('dutyDel', {id}).then(() => { toast('Removed'); vOps(); }).catch(err);
 
-async function vMem(top = '') {
+async function vMem(bar = '') {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   LM = l.members;
   const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending');
   const act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
-  wrap(`${top}${pend.length ? `<div class="card"><h3>Pending Approvals (${pend.length})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><div><b>${esc(r[0])}</b><small>${esc(r[3] || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
+  wrap(`${bar}${pend.length ? `<div class="card"><h3>Pending Approvals (${pend.length})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><div><b>${esc(r[0])}</b><small>${esc(r[3] || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
   <div class="card"><h3>Members (${act.length})</h3><p class="sub">Active members share fixed bills. Inactive members are excluded.</p>
     ${act.map(([r, i]) => `<div style="border-bottom:1px solid var(--b);padding:10px 0">
       <div style="font-weight:700;margin-bottom:6px">${esc(r[0])}</div>
@@ -635,48 +562,59 @@ async function vMem(top = '') {
     <button class="btn" onclick="addMem()">Add Member</button>
   </div>`);
 }
-const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vOps(); }).catch(err);
-const svMem = i => M('member', {name: LM[i][0], phone: $('#mph' + i).value.trim(), pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Member updated'); I = stamp(await run('init')); vOps(); }).catch(err);
-const addMem = () => M('member', {name: $('#nn').value.trim(), phone: $('#nph').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = stamp(await run('init')); vOps(); }).catch(err);
+const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vMD(); }).catch(err);
+const svMem = i => M('member', {name: LM[i][0], phone: $('#mph' + i).value.trim(), pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Member updated'); I = stamp(await run('init')); vMD(); }).catch(err);
+const addMem = () => M('member', {name: $('#nn').value.trim(), phone: $('#nph').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = stamp(await run('init')); vMD(); }).catch(err);
 
-async function vBillsAdv(top = '') {
-  let l, advList;
-  try { [l, advList] = await Promise.all([M('lists'), M('adv')]); } catch (e) { return err(e); }
-  const bills = l.bills.slice();
-  while (bills.length < 5) bills.push(['', '']);
-  const t = ME.today || I.today, openAdv = advList.filter(r => r[6] === 'Open');
-
-  wrap(`${top}
-  <div class="card"><h2>Fixed Bills</h2><p class="sub">Divided equally among all active members.</p>
-    ${bills.map((r, i) => `<label>Bill ${i + 1}</label><div class="flex"><input id="bn${i}" placeholder="Bill Name" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="Amount" value="${esc(r[1])}"></div>`).join('')}
-    <button class="btn" onclick="svBill(${bills.length})">Save Bills</button>
-  </div>
-
-  <div class="card"><h2>Request Advance Payment</h2><p class="sub">Ask members to pay in advance for bazar or bills.</p>
-    <label>Select Members</label>
-    <label class="chk"><input type="checkbox" checked onchange="document.querySelectorAll('.am').forEach(c => c.checked = this.checked)"> <b>Select All</b></label>
-    ${I.names.map(n => `<label class="chk"><input type="checkbox" class="am" value="${esc(n)}" checked> ${esc(n)}</label>`).join('') || '<div class="empty">No active members</div>'}
-    <label>Amount per Member (৳)</label><input id="aa" type="number" inputmode="decimal" min="0" placeholder="e.g. 2000">
-    <label>Due Date</label><input id="ad" type="date" value="${addD(t, 7)}">
-    <label>Note (Optional)</label><input id="an" placeholder="e.g. Monthly bazar advance">
-    <button class="btn" onclick="advReview()">Review Request</button>
-  </div>
-
-  <div class="card"><h3>Pending Advance (${openAdv.length})</h3>
-    ${openAdv.length ? openAdv.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · Due ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm sec" onclick="advAct('advDone','${r[0]}')">Mark Paid</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">Cancel</button></div></div>`).join('') : '<div class="empty">No pending advance requests</div>'}
-  </div>`);
+async function vBill(bar = '') {
+  let l; try { l = (await M('lists')).bills.slice(); } catch (e) { return err(e); }
+  while (l.length < 6) l.push(['', '']);
+  wrap(`${bar}<div class="card"><h2>Fixed Bills / ফিক্সড বিল</h2><p class="sub">Divided equally among all active members.<span class="bn-note">সব সক্রিয় মেম্বারের মাঝে সমানভাবে ভাগ হবে।</span></p>${l.map((r, i) => `<label>Bill ${i + 1}</label><div class="flex"><input id="bn${i}" placeholder="Bill Name" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="Amount" value="${esc(r[1])}"></div>`).join('')}<button class="btn" onclick="svBill(${l.length})">Save Bills</button></div>`);
 }
 const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
-function advReview() {
-  const names = Array.from(document.querySelectorAll('.am')).filter(c => c.checked).map(c => c.value);
-  const d = {members: names, amount: $('#aa').value, due: $('#ad').value, note: $('#an').value.trim()};
-  if (!names.length) return toast('Please select at least one member', 1);
-  if (!(Number(d.amount) > 0) || !d.due) return toast('Please enter amount and due date', 1);
-  wrap(`<div class="card"><h3>Review Advance Request</h3><table><tr><td>Members (${names.length})</td><td><b>${names.map(esc).join(', ')}</b></td></tr><tr><td>Amount Each</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Due Date</td><td><b>${fmt(d.due)}</b></td></tr></table>
-  <button class="btn" id="advc">Send Request</button><button class="btn sec" onclick="vOps()">Edit</button></div>`);
-  $('#advc').onclick = () => M('advAdd', d).then(n => { toast('Advance request sent to ' + n + ' member(s)'); vOps(); }).catch(err);
+
+async function vMess(bar = '') {
+  let l; try { l = await M('lists'); } catch (e) { return err(e); }
+  const c = l.cfg, k = l.rules;
+  wrap(`${bar}
+  <div class="card"><h2>Mess Cycle Settings</h2>
+    <div class="tiles"><div class="tile"><span>Start Date</span><b style="font-size:15px">${c.Start ? fmt(c.Start) : 'Not started'}</b></div><div class="tile"><span>End Date</span><b style="font-size:15px">${c.End ? fmt(c.End) : 'Running'}</b></div></div>
+    <label>Start Date</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">Start Mess</button>
+    <label>Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="mm('close','mend')">Close Mess</button>
+  </div>
+
+  <div class="card"><h3>Meal-Off Cutoff Times (নিয়ম নির্ধারণ)</h3>
+    <p class="sub">Set the deadline after which members cannot turn off meals.<span class="bn-sub">আজকের লাঞ্চ, আজকের ডিনার এবং আগামীকালের লাঞ্চ বন্ধের শেষ সময় নির্ধারণ করুন।</span></p>
+    <label>Today's Lunch Cutoff (আজকের লাঞ্চ বন্ধের শেষ সময়)</label><input type="time" id="cl" value="${k.lunch}">
+    <label>Today's Dinner Cutoff (আজকের ডিনার বন্ধের শেষ সময়)</label><input type="time" id="cd" value="${k.dinner}">
+    <label>Tomorrow's Lunch Cutoff Tonight (আগামীকালের লাঞ্চ আজ রাতে বন্ধের শেষ সময়)</label><input type="time" id="cnl" value="${k.nextLunch}">
+    <button class="btn" onclick="svCuts()">Save Cutoff Times</button>
+  </div>
+
+  <div class="card"><h3>Manager & Cook Contact Numbers</h3>
+    <p class="sub">Shown in the Contacts directory and when a member turns off a meal.</p>
+    <label>Manager Name</label><input id="cmn" value="${esc(c.ManagerName || 'Mess Manager')}">
+    <label>Manager Mobile Number</label><input id="cmp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.ManagerPhone || '')}">
+    <label>Cook Mobile Number (বুয়ার নাম্বার)</label><input id="ccp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.CookPhone || '')}">
+    <button class="btn" onclick="svContacts()">Save Contacts</button>
+  </div>
+
+  <div class="card"><h3>New Month Archive</h3>
+    <p class="sub">Archives current month to Google Drive and carries balances forward. Close the mess first.</p>
+    <button class="btn sec" onclick="nm()">Start New Month</button>
+    <button class="btn sec" onclick="M('sheets').then(()=>toast('Report sheets updated')).catch(err)">Sync Report Sheets</button>
+  </div>
+
+  <div class="card"><h3>Change Manager PIN</h3>
+    <input id="mpin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN">
+    <button class="btn" onclick="cp()">Update PIN</button>
+  </div>`);
 }
-const advAct = (a, id) => (a === 'advDone' || confirm('Cancel this advance request?')) && M(a, {id}).then(() => { toast(a === 'advDone' ? 'Marked as paid' : 'Request cancelled'); vOps(); }).catch(err);
+const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vMD(); }).catch(err);
+const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Cutoff times saved'); I = stamp(await run('init')); vMD(); }).catch(err);
+const svContacts = () => M('contacts', {managerName: $('#cmn').value, managerPhone: $('#cmp').value, cookPhone: $('#ccp').value}).then(async () => { toast('Contacts saved'); I = stamp(await run('init')); vMD(); }).catch(err);
+const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
+const nm = () => confirm('Archive current month and reset entries for a new month?') && M('newMonth').then(() => { toast('New month started. Backup saved to Drive.'); vMD(); }).catch(err);
 
 // ---------- Live Notifications & Polling ----------
 let ME = {duties: []}, DIS = {}, pollT, lastPend = null, lastSt = null, MIDS = [], RQ = {reqs: [], signups: []};
@@ -696,7 +634,7 @@ function setBell() {
   if (ROLE !== 'M') return;
   const n = ME.pending || 0;
   $('#bell').style.display = ''; $('#bc').textContent = n; $('#bc').style.display = n ? '' : 'none';
-  const t = $('#t_req'); if (t) t.textContent = 'Requests & Fine' + (n ? ' (' + n + ')' : '');
+  const t = $('#t_req'); if (t) t.textContent = 'Requests' + (n ? ' (' + n + ')' : '');
   document.title = (n ? '(' + n + ') ' : '') + 'Mess Manager';
 }
 const newIds = (a, b) => { const old = (a || []).map(x => x[0]); return (b || []).some(x => old.indexOf(x[0]) < 0); };
@@ -723,16 +661,14 @@ function startPoll() {
         if (newIds(ME.adv, m.adv)) { toast('💰 Manager requested an advance payment'); shouldShowModal = true; }
         if (newIds(ME.mo, m.mo)) { toast('🔕 New mess closure announced'); shouldShowModal = true; }
         if (newIds(ME.nt, m.nt)) { toast('📢 New notice from Manager'); shouldShowModal = true; }
-        if (newIds(ME.myFines, m.myFines)) { toast('⚠️ A fine has been added to your account'); shouldShowModal = true; }
-        if (newIds(ME.mgrReqs, m.mgrReqs)) { toast('📩 Manager sent you a request'); shouldShowModal = true; }
         ME = m;
         VC['me' + JSON.stringify([U, P, TOK])] = m;
         renderAlerts();
         if (shouldShowModal) showModal();
-        if (CUR === 'pay' && !typing()) vPay();
+        if (CUR === 'br' && !typing()) vBR();
         return;
       }
-      ME = m; VC['me' + JSON.stringify([U, P, TOK])] = m; setBell(); renderBalBar(); renderAlerts();
+      ME = m; VC['me' + JSON.stringify([U, P, TOK])] = m; setBell(); renderAlerts();
     } catch (e) {}
   }, 20000);
 }
@@ -747,23 +683,17 @@ function notices() {
   const n = [], t = ME.today || I.today;
   if (ROLE !== 'U') return n;
   if (ME.blocked) {
-    n.push({k: 'blk', lvl: 'red', act: "go('pay')", html: `<b>Account Frozen:</b> You have ${tk(ME.due)} unpaid dues, so meals are paused. Pay now or request a grace period.<span class="bn-sub">বাকি টাকার কারণে আপনার অ্যাকাউন্ট স্থগিত আছে। অনুগ্রহ করে টাকা পরিশোধ করুন অথবা সময় চান।</span>`});
+    n.push({k: 'blk', lvl: 'red', act: "go('br','br','pay')", html: `<b>Account Frozen:</b> You have ${tk(ME.due)} unpaid dues, so meals are paused. Pay now or request a grace period.<span class="bn-sub">বাকি টাকার কারণে আপনার অ্যাকাউন্ট স্থগিত আছে। অনুগ্রহ করে টাকা পরিশোধ করুন অথবা সময় চান।</span>`});
   } else if (ME.due > 0 && ME.graceUntil) {
-    n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('pay')", html: `<b>Payment Warning:</b> Please pay ${tk(ME.due)} by ${fmt(ME.graceUntil)} to avoid account freeze.<span class="bn-sub">সতর্কতা: ${fmt(ME.graceUntil)}-এর মধ্যে ${tk(ME.due)} পরিশোধ করুন।</span>`});
+    n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('br','br','pay')", html: `<b>Payment Warning:</b> Please pay ${tk(ME.due)} by ${fmt(ME.graceUntil)} to avoid account freeze.<span class="bn-sub">সতর্কতা: ${fmt(ME.graceUntil)}-এর মধ্যে ${tk(ME.due)} পরিশোধ করুন।</span>`});
   }
-  (ME.myFines || []).forEach(fItem => {
-    n.push({k: 'fn' + fItem[0], lvl: 'red', once: 1, dis: 1, modal: true, html: `<b>⚠️ Fine Imposed (${tk(fItem[2])}):</b> ${esc(fItem[3])} (${fmt(fItem[1])})<span class="bn-sub">আপনার অ্যাকাউন্টে ${tk(fItem[2])} জরিমানা ধরা হয়েছে। কারণ: ${esc(fItem[3])}</span>`});
-  });
-  (ME.mgrReqs || []).filter(r => r[8] === 'Open').forEach(r => {
-    n.push({k: 'mr' + r[0], lvl: 'warn', once: 1, dis: 1, modal: true, act: "go('pay','mgr')", html: `<b>📩 Manager Request (${esc(r[3])}):</b> ${esc(r[4])}${r[5] ? ' · Due ' + fmt(r[5]) : ''}`});
-  });
   (ME.mo || []).forEach(m => n.push({k: 'mo' + m[0], lvl: m[1] <= t ? 'red' : 'warn', once: 1, dis: 1, html: `<b>Mess Closure Notice:</b> ${esc(moTxt(m))}<span class="bn-sub">এই সময়ে মেস বন্ধ থাকবে এবং মিল হিসাব হবে না।</span>`}));
   (ME.nt || []).forEach(x => n.push({k: 'nt' + x[0], lvl: 'info', once: 1, dis: 1, modal: true, html: `<b>📢 Notice from Manager:</b> ${esc(x[1])}`}));
   (ME.adv || []).forEach(a => {
     const g = dayGap(t, a[2]);
     n.push({k: 'adv' + a[0], lvl: g <= 1 ? 'red' : 'warn', act: `payAdv('${a[0]}')`, html: `<b>💰 Advance Payment Request:</b> ${tk(a[1])} due by ${fmt(a[2])}${a[3] ? ' (' + esc(a[3]) + ')' : ''}<span class="bn-sub">ম্যানেজার ${fmt(a[2])}-এর মধ্যে ${tk(a[1])} অগ্রিম চেয়েছেন।</span>`});
   });
-  (ME.duties || []).filter(d => d[1] === U && d[3] >= t).forEach(d => {
+  (ME.duties || []).filter(d => d[1] === U).forEach(d => {
     const a = dayGap(t, d[2]), range = fmt(d[2]) + ' to ' + fmt(d[3]);
     let lvl = 'info', txt = `Your upcoming bazar duty: ${range}.`;
     if (a < 0) { lvl = 'red'; txt = `Your bazar duty is running now (${range}).`; }
@@ -777,7 +707,7 @@ function notices() {
 }
 
 function renderAlerts() {
-  $('#al').innerHTML = notices().filter(x => !DIS[x.k]).map(x => `<div class="alert ${x.lvl}"><div>${x.html}${x.act ? ` <a onclick="${x.act}">Open</a>` : ''}</div>${x.dis ? `<button class="x" title="Dismiss" onclick="dis('${x.k}')">×</button>` : ''}</div>`).join('');
+  $('#al').innerHTML = notices().filter(x => !DIS[x.k]).map(x => `<div class="alert ${x.lvl}"><div>${x.html}${x.act ? ` <a onclick="${x.act}">Pay Now</a>` : ''}</div>${x.dis ? `<button class="x" title="Dismiss" onclick="dis('${x.k}')">×</button>` : ''}</div>`).join('');
 }
 const dis = k => { DIS[k] = 1; renderAlerts(); };
 
@@ -803,113 +733,67 @@ function closeModal(goReq) {
   if (goReq) go('req');
 }
 
-// ---------- Member Tab 3: Requests & Pay ----------
-let PRE = null;
-const addD = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
-function payAdv(id) {
-  const a = (ME.adv || []).find(x => x[0] === id); if (!a) return toast('This request is no longer open', 1);
-  PRE = {amount: a[1], ref: id, note: 'Advance'}; SUB.rp = 'pay'; go('pay');
-}
-
-const badgeOf = s => s === 'Approved' || s === 'Replied' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
-async function vPay() {
+// ---------- Member: Payment, Grace, General Request & History ----------
+const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
+async function vPay(bar = '', mode = 'pay') {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
   renderAlerts();
-  const top = subBar('rp', [['pay', 'Payment'], ['req', 'Grace & Request'], ['mgr', `From Manager (${(ME.mgrReqs || []).filter(r => r[8] === 'Open').length})`], ['hist', 'History']]);
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
   const advs = ME.adv || [];
-  const advCard = advs.length ? `<div class="card"><h3>Advance Requests</h3>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay Now</button></div>`).join('')}</div>` : '';
+  const advCard = advs.length ? `<div class="card"><h3>Advance Requests</h3><p class="sub">The manager requested advance payment.</p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay Now</button></div>`).join('')}</div>` : '';
 
-  if (SUB.rp === 'req') {
-    return wrap(`${top}
-    <div class="card"><h3>Send a Request to Manager</h3><p class="sub">Need something fixed, meal adjustment, or any mess-related request?</p>
+  if (mode === 'req') {
+    return wrap(`${bar}<div class="card"><h3>Send a Request to Manager / ম্যানেজারকে রিকোয়েস্ট</h3><p class="sub">Need something fixed, meal adjustment, or any mess-related request?<span class="bn-note">মেসের যেকোনো বিষয়ে ম্যানেজারকে আবেদন বা মেসেজ পাঠান।</span></p>
       <label>Your Request</label><textarea id="greq_txt" maxlength="300" placeholder="Write your request clearly..."></textarea>
-      <button class="btn" onclick="sendGenReq()">Send Request to Manager</button>
+      <button class="btn sec" onclick="sendGenReq()">Send Request to Manager</button>
     </div>
-    ${ME.blocked ? `<div class="card"><h3>Need More Time?</h3><p class="sub">Request 1 or 2 days of grace period to unfreeze your meals.</p>${pendGrace ? '<span class="badge warn">Grace request pending</span>' : '<button class="btn sec" onclick="askGrace()">Request Grace Period</button>'}</div>` : ''}`);
+    ${ME.blocked ? `<div class="card"><h3>Need More Time? / গ্রেস পিরিয়ড</h3><p class="sub">Request 1 or 2 days of grace period to unfreeze your meals.</p>${pendGrace ? '<span class="badge warn">Grace request pending</span>' : '<button class="btn sec" onclick="askGrace()">Request Grace Period</button>'}</div>` : ''}`);
   }
 
-  if (SUB.rp === 'mgr') {
-    const mrs = ME.mgrReqs || [];
-    return wrap(`${top}<div class="card"><h2>Requests from Manager</h2>
-      ${mrs.length ? mrs.map(r => `<div style="border-bottom:1px solid var(--b);padding:12px 0">
-        <div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(r[3])}</b><span class="badge ${badgeOf(r[8])}">${esc(r[8])}</span></div>
-        <p style="margin:6px 0">${esc(r[4])}</p>
-        <small style="color:var(--m)">Sent: ${esc(r[1])}${r[5] ? ' · Due: ' + fmt(r[5]) : ''}</small>
-        ${r[6] ? `<div class="alert ok" style="margin-top:8px"><div><b>Reply:</b> ${esc(r[6])}</div></div>` : ''}
-        ${r[8] === 'Open' ? `<div class="flex" style="margin-top:8px"><input id="mrr_${r[0]}" placeholder="Write your reply or acknowledgement..."><button class="btn sm" style="flex:0 0 auto" onclick="sendMgrReply('${r[0]}')">Send</button></div>` : ''}
-      </div>`).join('') : '<div class="empty">No requests from manager</div>'}
-    </div>`);
-  }
-
-  if (SUB.rp === 'hist') {
-    return wrap(`${top}<div class="card"><h3>My Request History</h3>${mine.length ? mine.map(r => {
+  if (mode === 'hist') {
+    return wrap(`${bar}<div class="card"><h3>My Request History / আমার রিকোয়েস্ট হিস্ট্রি</h3>${mine.length ? mine.map(r => {
       let title = r[3] === 'pay' ? `Payment ${tk(r[4])} · ${fmt(r[5])}` : r[3] === 'grace' ? 'Grace Period Request' : `Request: ${esc(r[7])}`;
       return `<div class="row" style="cursor:default"><div><b>${title}</b>${r[9] ? `<small style="color:${r[8] === 'Rejected' ? '#dc2626' : '#166534'}">${esc(r[9])}</small>` : ''}</div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`;
     }).join('') : '<div class="empty">No requests yet</div>'}</div>`);
   }
 
-  wrap(`${top}${advCard}
-  <div class="card"><h2>Submit Payment Info</h2><p class="sub">Report money you paid. It updates your balance once approved.</p>
+  wrap(`${bar}${advCard}
+  <div class="card"><h2>Submit Payment Info / টাকা জমার তথ্য</h2><p class="sub">Report money you paid to the manager. It updates your balance once approved.<span class="bn-note">টাকা পরিশোধ করলে তথ্য পাঠান; ম্যানেজার অ্যাপ্রুভ করলে হিসাবে যুক্ত হবে।</span></p>
     ${PRE ? '<div class="alert info" style="margin:0 0 8px">Paying requested advance amount.</div>' : ''}
-    ${ME.due > 0 ? `<div class="banner neg"><span>Unpaid Due</span><b>${tk(ME.due)}</b></div>` : ''}
+    ${ME.due > 0 ? `<div class="banner neg"><span>Unpaid Due / বকেয়া</span><b>${tk(ME.due)}</b></div>` : ''}
     <label>Amount Paid (৳)</label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ME.due > 0 ? ME.due : ''}">
     <label>Payment Date</label><input id="pd" type="date" value="${ME.today}">
-    <label>Method</label><select id="pm"><option>Cash</option><option>bKash</option><option>Nagad</option><option>Bank</option></select>
     <label>Paid To</label><select id="pt"><option value="Manager">Mess Manager</option>${others.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <label>Note (Optional)</label><input id="pn" value="${PRE ? esc(PRE.note) : ''}" placeholder="e.g. TrxID or remark">
+    <label>Note (Optional)<div class="hint">e.g. bKash, Nagad, Cash</div></label><input id="pn" value="${PRE ? esc(PRE.note) : ''}">
     <button class="btn" onclick="payReview()">Continue</button>
   </div>`);
 }
 function payReview() {
-  const d = {amount: $('#pa').value, date: $('#pd').value, method: $('#pm').value, paidTo: $('#pt').value, note: $('#pn').value.trim(), ref: PRE ? PRE.ref : ''};
+  const d = {amount: $('#pa').value, date: $('#pd').value, paidTo: $('#pt').value, note: $('#pn').value.trim(), ref: PRE ? PRE.ref : ''};
   if (!(Number(d.amount) > 0) || !d.date) return toast('Please enter amount and date', 1);
-  wrap(`<div class="card"><h3>Review Payment</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Method</td><td><b>${esc(d.method)}</b></td></tr><tr><td>Paid To</td><td><b>${esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
-  <button class="btn" id="pc">Confirm & Send</button><button class="btn sec" onclick="vPay()">Edit</button></div>`);
-  $('#pc').onclick = () => run('request', U, P, 'pay', d, TOK).then(() => { PRE = null; toast('Payment request sent'); vPay(); }).catch(err);
+  wrap(`<div class="card"><h3>Review Payment</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Paid To</td><td><b>${esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
+  <button class="btn" id="pc">Confirm & Send</button><button class="btn sec" onclick="vBR()">Edit</button></div>`);
+  $('#pc').onclick = () => run('request', U, P, 'pay', d, TOK).then(() => { PRE = null; toast('Payment request sent'); OPT.br = 'hist'; vBR(); }).catch(err);
 }
 const sendGenReq = () => {
   const note = $('#greq_txt').value.trim();
   if (!note) return toast('Please write your request first', 1);
-  run('request', U, P, 'general', {note}, TOK).then(() => { toast('Request sent to manager'); vPay(); }).catch(err);
+  run('request', U, P, 'general', {note}, TOK).then(() => { toast('Request sent to manager'); OPT.br = 'hist'; vBR(); }).catch(err);
 };
-const askGrace = () => run('request', U, P, 'grace', {}, TOK).then(() => { toast('Grace request sent'); vPay(); }).catch(err);
-const sendMgrReply = id => {
-  const reply = $('#mrr_' + id).value.trim();
-  if (!reply) return toast('Please write a reply', 1);
-  run('replyMgrReq', U, P, id, reply, TOK).then(() => { toast('Reply sent'); vPay(); }).catch(err);
-};
+const askGrace = () => run('request', U, P, 'grace', {}, TOK).then(() => { toast('Grace request sent'); OPT.br = 'hist'; vBR(); }).catch(err);
 
-// ---------- Member Tab 4: Notices & Rules ----------
-async function vNoticesRules() {
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
-  const nts = ME.nt || [], mos = ME.mo || [];
-  wrap(`
-    <div class="card"><h2>📢 Active Notices</h2>
-      ${nts.length ? nts.map(x => `<div class="alert info" style="margin:0 0 8px"><div>${esc(x[1])}</div></div>`).join('') : '<div class="empty">No active notices right now</div>'}
-    </div>
-    <div class="card"><h2>🔕 Mess Closures</h2>
-      ${mos.length ? mos.map(m => `<div class="row" style="cursor:default"><div><b>${esc(moTxt(m))}</b></div><span class="badge warn">Closed</span></div>`).join('') : '<div class="empty">No scheduled mess closures</div>'}
-    </div>
-    <div class="card"><h2>⏰ Meal-Off Rules & Deadlines</h2>${ruleBox()}</div>
-  `);
-}
-
-// ---------- Manager Tab 2: Requests, Impose Fine & Manager-to-Member Request ----------
+// ---------- Manager: Requests (With Mandatory Rejection Reason) ----------
 async function vReq() {
-  let finesList, mgrReqsList;
-  try { [RQ, finesList, mgrReqsList] = await Promise.all([M('reqs'), M('fines'), M('mgrReqs')]); } catch (e) { return err(e); }
-  const pend = RQ.reqs.filter(x => x[8] === 'Pending'), done = RQ.reqs.filter(x => x[8] !== 'Pending').slice(0, 12);
-  ME.pending = pend.length + RQ.signups.length; lastPend = ME.pending; setBell(); renderBalBar();
+  try { RQ = await M('reqs'); } catch (e) { return err(e); }
+  const pend = RQ.reqs.filter(x => x[8] === 'Pending'), done = RQ.reqs.filter(x => x[8] !== 'Pending').slice(0, 15);
+  ME.pending = pend.length + RQ.signups.length; lastPend = ME.pending; setBell();
   const none = !pend.length && !RQ.signups.length;
-
-  wrap(`
-  <div class="card"><h2>Pending Requests</h2><p class="sub">Approve or reject member requests. A reason is required when rejecting.</p>${none ? '<div class="empty">No pending requests 🎉</div>' : ''}</div>
+  wrap(`${greetCard('Requests & Approvals', 'সাইনআপ, পেমেন্ট, গ্রেস ও জেনারেল রিকোয়েস্ট যাচাই করুন')}<div class="card"><h2>Requests</h2><p class="sub">Approve or reject member requests. A reason is required when rejecting.<span class="bn-note">বাতিল করলে অবশ্যই কারণ লিখতে হবে।</span></p>${none ? '<div class="empty">No pending requests 🎉</div>' : ''}</div>
   ${RQ.signups.length ? `<div class="card"><h3>New Member Signups (${RQ.signups.length})</h3>${RQ.signups.map((s, i) => `<div class="row" style="cursor:default"><div><b>${esc(s.name)}</b><small>${esc(s.phone || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="rqSign(${i},'approve')">Approve</button><button class="btn sm red" onclick="rqSign(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
   ${pend.map(r => {
     if (r[3] === 'pay') {
       return `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">💰 Payment from ${esc(r[2])}</h3><span class="badge warn" style="flex:0 0 auto">Pending</span></div>
-        <table style="margin-top:8px"><tr><td>Amount</td><td><b>${tk(r[4])}</b></td></tr><tr><td>Paid To</td><td>${esc(r[6] || '-')}</td></tr><tr><td>Date</td><td>${fmt(r[5])}</td></tr>${r[7] ? `<tr><td>Details</td><td>${esc(r[7])}</td></tr>` : ''}</table>
+        <table style="margin-top:8px"><tr><td>Amount</td><td><b>${tk(r[4])}</b></td></tr><tr><td>Paid To</td><td>${esc(r[6] || '-')}</td></tr><tr><td>Date</td><td>${fmt(r[5])}</td></tr>${r[7] ? `<tr><td>Note</td><td>${esc(r[7])}</td></tr>` : ''}</table>
         <label>Amount to Approve (৳)</label><input id="ra_${r[0]}" type="number" inputmode="decimal" value="${esc(r[4])}">
         <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqPay('${r[0]}',true)">Approve</button><button class="btn red" style="margin:0" onclick="rqPay('${r[0]}',false)">Reject</button></div></div>`;
     } else if (r[3] === 'grace') {
@@ -924,31 +808,7 @@ async function vReq() {
         <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqGen('${r[0]}',true)">Approve</button><button class="btn red" style="margin:0" onclick="rqGen('${r[0]}',false)">Reject</button></div></div>`;
     }
   }).join('')}
-
-  <div class="card"><h2>⚠️ Impose Fine (Privacy-Safe Alert)</h2>
-    <p class="sub">Fine is added to the member's bill. Public notice hides the member's name; only the fined member sees the specific reason.</p>
-    <label>Member</label><select id="fm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <label>Fine Amount (৳)</label><input id="fa" type="number" inputmode="decimal" min="1" placeholder="e.g. 50">
-    <label>Reason (Private to Member & Manager)</label><input id="fr" placeholder="e.g. Missed assigned bazar duty without notice">
-    <label>Public Alert Message (No Name Included)</label><input id="fp" placeholder="Default: নির্ধারিত নিয়ম/দায়িত্ব লঙ্ঘনের কারণে জরিমানা ধরা হয়েছে। সবাই নিজ নিজ দায়িত্ব পালন করুন।">
-    <button class="btn red" onclick="addFine()">Impose Fine & Publish Alert</button>
-    ${finesList.length ? `<h3 style="margin-top:16px">Recent Fines</h3>${finesList.slice(0, 10).map(x => `<div class="row" style="cursor:default"><div><b>${esc(x[2])} · ${tk(x[3])}</b><small>${fmt(x[6] || x[1].slice(0, 10))} · ${esc(x[4])}</small></div><button class="btn sm red" onclick="delFine('${x[0]}')">Delete</button></div>`).join('')}` : ''}
-  </div>
-
-  <div class="card"><h2>📤 Send Request to Members</h2>
-    <p class="sub">Request payment, document, confirmation, or any action from a member or everyone.</p>
-    <label>Send To</label><select id="mrt"><option value="ALL">All Active Members</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <label>Request Title</label><input id="mrti" placeholder="e.g. Gas/Wi-Fi Bill Confirmation">
-    <label>Message / Details</label><textarea id="mrm" placeholder="Write what you need from member(s)..."></textarea>
-    <label>Due Date (Optional)</label><input type="date" id="mrd">
-    <button class="btn" onclick="sendMgrRequest()">Send Request</button>
-    ${mgrReqsList.length ? `<h3 style="margin-top:16px">Sent Requests & Replies</h3>${mgrReqsList.slice(0, 10).map(r => `<div class="row" style="cursor:default;flex-wrap:wrap">
-      <div style="flex:1;min-width:65%"><b>${esc(r[3])}</b> → <span class="badge gray">${esc(r[2] === 'ALL' ? 'All Members' : r[2])}</span><br><small>${esc(r[4])}${r[6] ? `<br><span style="color:#166534;font-weight:600">Reply: ${esc(r[6])}</span>` : ''}</small></div>
-      <div class="flex" style="flex:0 0 auto"><span class="badge ${badgeOf(r[8])}">${esc(r[8])}</span><button class="btn sm red" onclick="closeMgrReq('${r[0]}',true)">Del</button></div>
-    </div>`).join('')}` : ''}
-  </div>
-
-  ${done.length ? `<div class="card"><h3>Recent Member Request Decisions</h3>${done.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b> · ${r[3] === 'pay' ? 'Payment ' + tk(r[4]) : r[3] === 'grace' ? 'Grace Request' : esc(r[7])}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
+  ${done.length ? `<div class="card"><h3>Recent Decisions</h3>${done.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b> · ${r[3] === 'pay' ? 'Payment ' + tk(r[4]) : r[3] === 'grace' ? 'Grace Request' : esc(r[7])}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
 }
 
 const rqSign = (i, a) => M(a, {name: RQ.signups[i].name}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Signup rejected'); I = stamp(await run('init')); vReq(); }).catch(err);
@@ -979,93 +839,86 @@ const rqGen = (id, ok) => {
   }
   M('decide', {id, ok, reply: ok ? $('#rr_' + id).value.trim() : '', reason}).then(() => { toast(ok ? 'Request approved' : 'Request rejected'); vReq(); }).catch(err);
 };
-const addFine = () => {
-  const d = {member: $('#fm').value, amount: $('#fa').value, reason: $('#fr').value.trim(), publicMsg: $('#fp').value.trim()};
-  if (!(Number(d.amount) > 0) || !d.reason) return toast('Please enter fine amount and reason', 1);
-  M('fineAdd', d).then(() => { toast('Fine imposed & public alert published'); vReq(); }).catch(err);
-};
-const delFine = id => confirm('Delete this fine?') && M('fineDel', {id}).then(() => { toast('Fine deleted'); vReq(); }).catch(err);
-const sendMgrRequest = () => {
-  const d = {target: $('#mrt').value, title: $('#mrti').value.trim(), message: $('#mrm').value.trim(), due: $('#mrd').value};
-  if (!d.title || !d.message) return toast('Please enter title and message', 1);
-  M('mgrReqSend', d).then(() => { toast('Request sent'); vReq(); }).catch(err);
-};
-const closeMgrReq = (id, del) => M('mgrReqClose', {id, del}).then(() => { toast('Removed'); vReq(); }).catch(err);
 
-// ---------- Manager Tab 5: Notices & Settings ----------
-async function vSet() {
-  let l, nt, mo;
-  try { [l, nt, mo] = await Promise.all([M('lists'), M('nt'), M('mo')]); } catch (e) { return err(e); }
-  const c = l.cfg, k = l.rules, t = ME.today || I.today;
-  const actNt = nt.filter(r => r[3] >= t), upMo = mo.filter(r => r[4] >= t).sort((a, b) => a[2] < b[2] ? -1 : 1);
-  const shSel = (id, v) => `<select id="${id}"><option value="L" ${v === 'L' ? 'selected' : ''}>${SH.L}</option><option value="D" ${v === 'D' ? 'selected' : ''}>${SH.D}</option></select>`;
-
-  wrap(`
-  <div class="card"><h2>📢 Broadcast Notice</h2><p class="sub">Members see this notice immediately in the app.</p>
-    <label>Message</label><textarea id="nt_t" maxlength="300" placeholder="e.g. Cook will be absent tomorrow morning."></textarea>
-    <label>Duration</label><select id="nt_d"><option value="1">1 Day (Today)</option><option value="3" selected>3 Days</option><option value="7">7 Days</option><option value="14">14 Days</option></select>
-    <button class="btn" onclick="ntSend()">Publish Notice</button>
-    ${actNt.length ? `<h3 style="margin-top:16px">Active Notices</h3>${actNt.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>Until ${fmt(r[3])}</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">Delete</button></div>`).join('')}` : ''}
-  </div>
-
-  <div class="card"><h2>🔕 Announce Mess Closure</h2><p class="sub">Meals during closure are automatically excluded from billing.</p>
-    <label>From</label><div class="flex"><input type="date" id="mo_f" value="${t}">${shSel('mo_fs', 'L')}</div>
-    <label>To</label><div class="flex"><input type="date" id="mo_t" value="${t}">${shSel('mo_ts', 'L')}</div>
-    <label>Reason (Optional)</label><input id="mo_n" maxlength="100" placeholder="e.g. Eid Holidays">
-    <button class="btn red" onclick="moAdd()">Announce Closure</button>
-    ${upMo.length ? `<h3 style="margin-top:16px">Scheduled Closures</h3>${upMo.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${moTxt([r[0], r[2], r[3], r[4], r[5], r[6]])}</div><button class="btn sm sec" onclick="moDel('${r[0]}')">Cancel</button></div>`).join('')}` : ''}
-  </div>
-
-  <div class="card"><h2>Mess Cycle Settings</h2>
-    <div class="tiles"><div class="tile"><span>Start Date</span><b style="font-size:15px">${c.Start ? fmt(c.Start) : 'Not started'}</b></div><div class="tile"><span>End Date</span><b style="font-size:15px">${c.End ? fmt(c.End) : 'Running'}</b></div></div>
-    <label>Start Date</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">Start Mess</button>
-    <label>Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="mm('close','mend')">Close Mess</button>
-  </div>
-
-  <div class="card"><h3>Meal-Off Cutoff Times (নিয়ম নির্ধারণ)</h3>
-    <label>Today's Lunch Cutoff</label><input type="time" id="cl" value="${k.lunch}">
-    <label>Today's Dinner Cutoff</label><input type="time" id="cd" value="${k.dinner}">
-    <label>Tomorrow's Lunch Cutoff Tonight</label><input type="time" id="cnl" value="${k.nextLunch}">
-    <button class="btn" onclick="svCuts()">Save Cutoff Times</button>
-  </div>
-
-  <div class="card"><h3>Manager & Cook Contact Numbers</h3>
-    <label>Manager Name</label><input id="cmn" value="${esc(c.ManagerName || 'Mess Manager')}">
-    <label>Manager Mobile Number</label><input id="cmp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.ManagerPhone || '')}">
-    <label>Cook Mobile Number (বুয়ার নাম্বার)</label><input id="ccp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.CookPhone || '')}">
-    <button class="btn" onclick="svContacts()">Save Contacts</button>
-  </div>
-
-  <div class="card"><h3>New Month Archive</h3>
-    <p class="sub">Archives current month to Google Drive and carries balances forward. Close the mess first.</p>
-    <button class="btn sec" onclick="nm()">Start New Month</button>
-    <button class="btn sec" onclick="M('sheets').then(()=>toast('Report sheets updated')).catch(err)">Sync Report Sheets</button>
-  </div>
-
-  <div class="card"><h3>Change Manager PIN</h3>
-    <input id="mpin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN">
-    <button class="btn" onclick="cp()">Update PIN</button>
-  </div>`);
+// ---------- Bazar Duty ----------
+async function vDuty(bar = '') {
+  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  renderAlerts();
+  const t = ME.today, l = ME.duties || [];
+  const bd = d => { const a = dayGap(t, d[2]); return a < 0 ? ['pos', 'Running'] : a === 0 ? ['neg', 'Starts Today'] : a === 1 ? ['neg', 'Tomorrow'] : a === 2 ? ['warn', 'In 2 Days'] : ['gray', 'In ' + a + ' Days']; };
+  wrap(`${bar}${ROLE === 'M' ? `<div class="card"><h3>Assign Bazar Duty / বাজার ডিউটি দিন</h3>
+  <label>Member</label><select id="dm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <div class="flex"><div><label>From</label><input type="date" id="df" value="${t}"></div><div><label>To</label><input type="date" id="dt" value="${t}"></div></div>
+  <button class="btn" onclick="dutyAdd()">Add to Schedule</button></div>` : ''}
+  <div class="card"><h2>Bazar Duty Schedule / বাজারের তালিকা</h2>${l.length ? l.map(d => { const b = bd(d), me = d[1] === U; return `<div class="row" style="cursor:default${me ? ';background:#f0fdfa;border-radius:10px;padding:11px 8px' : ''}"><div><b>${esc(d[1])}${me ? ' (You)' : ''}</b><small>${fmt(d[2])} to ${fmt(d[3])}</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${b[0]}">${b[1]}</span>${ROLE === 'M' ? `<button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button>` : ''}</div></div>`; }).join('') : '<div class="empty">No bazar duties scheduled</div>'}</div>`);
 }
-const ntSend = () => { const d = {text: $('#nt_t').value.trim(), days: $('#nt_d').value}; if (!d.text) return toast('Please write a message', 1); M('ntAdd', d).then(() => { toast('Notice published'); vSet(); }).catch(err); };
-const ntDel = id => confirm('Delete this notice?') && M('ntDel', {id}).then(() => { toast('Notice deleted'); vSet(); }).catch(err);
+const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('Please enter valid dates', 1); M('dutyAdd', d).then(() => { toast('Duty added'); VIEWS[CUR](); }).catch(err); };
+const dutyDel = id => confirm('Remove this duty?') && M('dutyDel', {id}).then(() => { toast('Removed'); VIEWS[CUR](); }).catch(err);
+
+// ---------- Advance Requests ----------
+let PRE = null;
+const addD = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+function payAdv(id) {
+  const a = (ME.adv || []).find(x => x[0] === id); if (!a) return toast('This request is no longer open', 1);
+  PRE = {amount: a[1], ref: id, note: 'Advance'}; go('br', 'br', 'pay');
+}
+async function vAdv(bar = '') {
+  let l; try { l = await M('adv'); } catch (e) { return err(e); }
+  const t = ME.today || I.today, open = l.filter(r => r[6] === 'Open'), paid = l.filter(r => r[6] === 'Paid').slice(0, 10);
+  wrap(`${bar}<div class="card"><h2>Request Advance Payment</h2><p class="sub">Ask members to pay in advance for bazar or bills.</p>
+  <label>Select Members</label>
+  <label class="chk"><input type="checkbox" checked onchange="document.querySelectorAll('.am').forEach(c => c.checked = this.checked)"> <b>Select All</b></label>
+  ${I.names.map(n => `<label class="chk"><input type="checkbox" class="am" value="${esc(n)}" checked> ${esc(n)}</label>`).join('') || '<div class="empty">No active members</div>'}
+  <label>Amount per Member (৳)</label><input id="aa" type="number" inputmode="decimal" min="0" placeholder="e.g. 2000">
+  <label>Due Date</label><input id="ad" type="date" value="${addD(t, 7)}">
+  <label>Note (Optional)</label><input id="an" placeholder="e.g. Monthly bazar advance">
+  <button class="btn" onclick="advReview()">Review Request</button></div>
+  <div class="card"><h3>Pending Advance (${open.length})</h3>${open.length ? `<p class="sub">Total Requested: ${tk(open.reduce((a, r) => a + Number(r[3]), 0))}</p>` + open.map(r => { const od = r[4] < t; return `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · Due ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${od ? 'neg' : 'warn'}">${od ? 'Overdue' : 'Pending'}</span><button class="btn sm sec" onclick="advAct('advDone','${r[0]}')">Mark Paid</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">Cancel</button></div></div>`; }).join('') : '<div class="empty">No pending advance requests</div>'}</div>
+  ${paid.length ? `<div class="card"><h3>Recently Paid</h3>${paid.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b><small>${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><span class="badge pos">Paid</span></div>`).join('')}</div>` : ''}`);
+}
+function advReview() {
+  const names = Array.from(document.querySelectorAll('.am')).filter(c => c.checked).map(c => c.value);
+  const d = {members: names, amount: $('#aa').value, due: $('#ad').value, note: $('#an').value.trim()};
+  if (!names.length) return toast('Please select at least one member', 1);
+  if (!(Number(d.amount) > 0) || !d.due) return toast('Please enter amount and due date', 1);
+  wrap(`<div class="card"><h3>Review Advance Request</h3><table><tr><td>Members (${names.length})</td><td><b>${names.map(esc).join(', ')}</b></td></tr><tr><td>Amount Each</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Total Amount</td><td><b>${tk(Number(d.amount) * names.length)}</b></td></tr><tr><td>Due Date</td><td><b>${fmt(d.due)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
+  <button class="btn" id="advc">Send Request</button><button class="btn sec" onclick="vMD()">Edit</button></div>`);
+  $('#advc').onclick = () => M('advAdd', d).then(n => { toast('Advance request sent to ' + n + ' member(s)'); vMD(); }).catch(err);
+}
+const advAct = (a, id) => (a === 'advDone' || confirm('Cancel this advance request?')) && M(a, {id}).then(() => { toast(a === 'advDone' ? 'Marked as paid' : 'Request cancelled'); vMD(); }).catch(err);
+
+// ---------- Notices & Mess Closure ----------
+async function vAnn(bar = '') {
+  let nt, mo; try { [nt, mo] = await Promise.all([M('nt'), M('mo')]); } catch (e) { return err(e); }
+  const t = ME.today || I.today, act = nt.filter(r => r[3] >= t), up = mo.filter(r => r[4] >= t).sort((a, b) => a[2] < b[2] ? -1 : 1);
+  const shSel = (id, v) => `<select id="${id}"><option value="L" ${v === 'L' ? 'selected' : ''}>${SH.L}</option><option value="D" ${v === 'D' ? 'selected' : ''}>${SH.D}</option></select>`;
+  wrap(`${bar}<div class="card"><h2>Broadcast Notice / নোটিশ প্রকাশ</h2><p class="sub">Members see this notice immediately in the app.</p>
+  <label>Message</label><textarea id="nt_t" maxlength="300" placeholder="e.g. Cook will be absent tomorrow morning."></textarea>
+  <label>Duration</label><select id="nt_d"><option value="1">1 Day (Today)</option><option value="3" selected>3 Days</option><option value="7">7 Days</option><option value="14">14 Days</option></select>
+  <button class="btn" onclick="ntSend()">Publish Notice</button>
+  ${act.length ? `<h3 style="margin-top:18px">Active Notices</h3>${act.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>Until ${fmt(r[3])}</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">Delete</button></div>`).join('')}` : ''}</div>
+
+  <div class="card"><h2>Announce Mess Closure / মেস বন্ধ ঘোষণা</h2><p class="sub">Meals during closure are automatically excluded from billing.</p>
+  <label>From</label><div class="flex"><input type="date" id="mo_f" value="${t}">${shSel('mo_fs', 'L')}</div>
+  <label>To</label><div class="flex"><input type="date" id="mo_t" value="${t}">${shSel('mo_ts', 'L')}</div>
+  <label>Reason (Optional)</label><input id="mo_n" maxlength="100" placeholder="e.g. Eid Holidays">
+  <button class="btn red" onclick="moAdd()">Announce Closure</button>
+  ${up.length ? `<h3 style="margin-top:18px">Scheduled Closures</h3>${up.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${moTxt([r[0], r[2], r[3], r[4], r[5], r[6]])}</div><button class="btn sm sec" onclick="moDel('${r[0]}')">Cancel</button></div>`).join('')}` : ''}</div>`);
+}
+const ntSend = () => { const d = {text: $('#nt_t').value.trim(), days: $('#nt_d').value}; if (!d.text) return toast('Please write a message', 1); M('ntAdd', d).then(() => { toast('Notice published'); vMD(); }).catch(err); };
+const ntDel = id => confirm('Delete this notice?') && M('ntDel', {id}).then(() => { toast('Notice deleted'); vMD(); }).catch(err);
 const moAdd = () => {
   const d = {from: $('#mo_f').value, fromShift: $('#mo_fs').value, to: $('#mo_t').value, toShift: $('#mo_ts').value, note: $('#mo_n').value.trim()};
   if (!d.from || !d.to) return toast('Please select dates', 1);
   if (d.to < d.from || (d.to === d.from && d.fromShift === 'D' && d.toShift === 'L')) return toast('End must be after start', 1);
-  M('moAdd', d).then(() => { toast('Mess closure announced'); vSet(); }).catch(err);
+  M('moAdd', d).then(() => { toast('Mess closure announced'); vMD(); }).catch(err);
 };
-const moDel = id => confirm('Cancel this closure?') && M('moDel', {id}).then(() => { toast('Cancelled'); vSet(); }).catch(err);
-const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vSet(); }).catch(err);
-const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Cutoff times saved'); I = stamp(await run('init')); vSet(); }).catch(err);
-const svContacts = () => M('contacts', {managerName: $('#cmn').value, managerPhone: $('#cmp').value, cookPhone: $('#ccp').value}).then(async () => { toast('Contacts saved'); I = stamp(await run('init')); vSet(); }).catch(err);
-const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
-const nm = () => confirm('Archive current month and reset entries for a new month?') && M('newMonth').then(() => { toast('New month started. Backup saved to Drive.'); vSet(); }).catch(err);
+const moDel = id => confirm('Cancel this closure?') && M('moDel', {id}).then(() => { toast('Cancelled'); vMD(); }).catch(err);
 
 // ---------- Fast View Cache ----------
 let VC = {}, CUR = '';
 const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
-const VIEWS = {rep: vRep, mb: vMB, pay: vPay, ntv: vNoticesRules, req: vReq, ent: vEnt, ops: vOps, set: vSet, dir: vDir};
+const VIEWS = {rep: vRep, meals: vMeals, br: vBR, req: vReq, ent: vEnt, md: vMD, dir: vDir};
 const typing = () => { const e = document.activeElement; return !!(e && /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && $('#v').contains(e)); };
 const rc = (fn, ...a) => {
   const k = fn + JSON.stringify(a), hit = VC[k], tab = CUR, get = () => call(fn, a).then(d => (VC[k] = d));
