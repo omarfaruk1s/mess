@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="bn"><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>মেস ম্যানেজার</title>
+<title>Mess Manager</title>
 <style>
 :root{--g:#0f766e;--g2:#115e59;--bg:#eef3f2;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--r:#dc2626;--ok:#16a34a}
 *{box-sizing:border-box}
@@ -58,74 +58,133 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 #mbox{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:420px;max-height:85vh;overflow:auto;box-shadow:0 10px 40px #0004}
 .bar .ic{position:relative;font-size:16px;padding:6px 10px}#bc{position:absolute;top:-7px;right:-7px;background:#dc2626;color:#fff;border-radius:10px;font:700 11px/1 system-ui;padding:3px 6px;font-style:normal}
 label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;font-size:15px}.chk input{width:auto;transform:scale(1.25)}
-.bn{display:block;font-size:.82em;font-weight:400;opacity:.85;line-height:1.35;margin-top:2px;text-transform:none;font-style:normal;letter-spacing:0}
-button .bn{font-size:.76em;opacity:.92}#tabs .bn{font-size:10px}.badge .bn{font-size:10px}.alert .bn{font-weight:500}
+.bn-sub{display:block;font-size:12px;font-weight:400;color:#64748b;margin-top:2px}
+body:not(.bilingual-rep) .bn-sub{display:none}
 @media print{#tabs,.bar,button,#toast,#al,#modal{display:none!important}}
 </style></head><body>
-<div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><div class="sh"></div><b id="lmsg">লোড হচ্ছে...</b><span class="fun" id="lfun"></span><div class="tr"><i></i></div><small id="lsub"></small></div></div>
-<div class="bar"><div><b id="title">মেস ম্যানেজার</b><small id="me"></small></div><div style="display:flex;gap:8px;align-items:center"><button id="bell" class="ic" title="অনুরোধ" style="display:none" onclick="go('req')">🔔<i id="bc" style="display:none"></i></button><button id="out" style="display:none" onclick="logout()">লগ আউট</button></div></div>
+<div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><div class="sh"></div><b id="lmsg">Loading...</b><span class="fun" id="lfun"></span><div class="tr"><i></i></div><small id="lsub"></small></div></div>
+<div class="bar"><div><b id="title">Mess Manager</b><small id="me"></small></div><div style="display:flex;gap:8px;align-items:center"><button id="bell" class="ic" title="Requests" style="display:none" onclick="go('req')">🔔<i id="bc" style="display:none"></i></button><button id="out" style="display:none" onclick="logout()">Log out</button></div></div>
 <div id="tabs" style="display:none"></div>
 <div class="wrap" id="al" style="padding-top:0;padding-bottom:0"></div>
-<div class="wrap" id="v"><div class="empty">লোড হচ্ছে...</div></div>
+<div class="wrap" id="v"><div class="empty">Loading...</div></div>
 <div id="modal"><div id="mbox"></div></div>
 <div id="toast"></div>
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbw_7rSc5kXsMjST6UexZniTrtwUeBWr_XBin1j_DrAP4Z6m33zbu_4kTcOoMVgTynVcjQ/exec';
 const $ = s => document.querySelector(s);
 
-// ---------- বাংলা সংখ্যা, তারিখ, সময় ----------
-const bn = s => String(s);
-const MON = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
-const fmt = d => { if (!d) return '-'; const p = String(d).split('-'); return p.length < 3 ? d : bn(+p[2]) + ' ' + MON[+p[1] - 1] + ' ' + bn(p[0]); };
-const f = x => bn((Math.round(x * 100) / 100).toLocaleString('en-US'));
+const MON_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MON_BN = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+const fmt = d => {
+  if (!d) return '-';
+  const p = String(d).split('-');
+  if (p.length < 3) return d;
+  return `${+p[2]} ${MON_EN[+p[1] - 1] || p[1]} ${p[0]}`;
+};
+const fmtBi = d => {
+  if (!d) return '-';
+  const p = String(d).split('-');
+  if (p.length < 3) return d;
+  const en = `${+p[2]} ${MON_EN[+p[1] - 1] || p[1]} ${p[0]}`;
+  const bn = `${+p[2]} ${MON_BN[+p[1] - 1] || p[1]} ${p[0]}`;
+  return `${en} <span class="bn-sub">(${bn})</span>`;
+};
+const f = x => (Math.round(Number(x || 0) * 100) / 100).toLocaleString('en-US');
 const tk = x => '৳' + f(x);
-function bnTime(t) {
-  const h = +t.slice(0, 2), m = t.slice(3), h12 = h % 12 || 12;
-  const per = h < 4 ? 'রাত' : h < 6 ? 'ভোর' : h < 12 ? 'সকাল' : h < 16 ? 'দুপুর' : h < 18 ? 'বিকেল' : h < 20 ? 'সন্ধ্যা' : 'রাত';
-  return per + ' ' + bn(h12) + (m === '00' ? '' : ':' + bn(m)) + 'টা';
+function enTime(t) {
+  const h = +String(t || '00:00').slice(0, 2), m = String(t || '00:00').slice(3), h12 = h % 12 || 12;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h12}${m === '00' ? '' : ':' + m} ${ampm}`;
 }
-const SH = {L: 'লাঞ্চ', D: 'ডিনার'};
-const STL = {Pending: 'অপেক্ষায়', Approved: 'অনুমোদিত', Rejected: 'বাতিল'};
+const SH = {L: 'Lunch', D: 'Dinner'};
+const STL = {Pending: 'Pending', Approved: 'Approved', Rejected: 'Rejected'};
 
-// ---------- লোডিং ----------
 let busy = 0, slow, fun, shown = 0;
-const FUN = [['🍚', 'ভাত রান্না হচ্ছে...'], ['🛒', 'বাজার করা হচ্ছে...'], ['🧮', 'মিল গোনা হচ্ছে...'], ['🐟', 'মাছ ভাজা হচ্ছে...'], ['🥘', 'তরকারি নাড়া হচ্ছে...'], ['🧾', 'বিল মেলানো হচ্ছে...']];
+const FUN = [
+  ['🍚', 'Cooking the rice...'],
+  ['🛒', 'Going to the bazar...'],
+  ['🧮', 'Counting the meals...'],
+  ['🐟', 'Frying the fish...'],
+  ['🥘', 'Stirring the curry...'],
+  ['🧾', 'Matching the bills...']
+];
 const load = (d, msg) => {
-  busy += d; const el = $('#load');
+  busy += d;
+  const el = $('#load');
   if (busy > 0) {
     if (msg) $('#lmsg').textContent = msg;
-    if (shown) return; shown = 1; $('#lsub').textContent = '';
+    if (shown) return;
+    shown = 1;
+    $('#lsub').textContent = '';
     let k = Math.floor(Math.random() * FUN.length);
-    const tick = () => { $('#lemo').textContent = FUN[k][0]; $('#lfun').textContent = FUN[k][1]; k = (k + 1) % FUN.length; };
-    tick(); clearInterval(fun); fun = setInterval(tick, 1500); el.style.display = 'flex';
-    clearTimeout(slow); slow = setTimeout(() => $('#lsub').textContent = 'একটু সময় লাগছে, অনুগ্রহ করে অপেক্ষা করুন...', 4000);
-  } else { busy = 0; shown = 0; clearInterval(fun); clearTimeout(slow); el.style.display = 'none'; }
+    const tick = () => {
+      $('#lemo').textContent = FUN[k][0];
+      $('#lfun').textContent = FUN[k][1];
+      k = (k + 1) % FUN.length;
+    };
+    tick();
+    clearInterval(fun);
+    fun = setInterval(tick, 1500);
+    el.style.display = 'flex';
+    clearTimeout(slow);
+    slow = setTimeout(() => $('#lsub').textContent = 'This is taking a little time. Please wait...', 4000);
+  } else {
+    busy = 0;
+    shown = 0;
+    clearInterval(fun);
+    clearTimeout(slow);
+    el.style.display = 'none';
+  }
 };
-const MSG = {save: 'সংরক্ষণ হচ্ছে...', signup: 'অনুরোধ পাঠানো হচ্ছে...', login: 'লগইন হচ্ছে...', setReturn: 'সংরক্ষণ হচ্ছে...', request: 'অনুরোধ পাঠানো হচ্ছে...', boot: 'লগইন হচ্ছে...'};
+const MSG = {
+  save: 'Saving...',
+  signup: 'Sending request...',
+  login: 'Logging in...',
+  setReturn: 'Saving...',
+  request: 'Sending request...',
+  boot: 'Logging in...'
+};
 const READ_ACTS = ['lists', 'reqs', 'adv', 'mo', 'nt'];
-const call = (fn, a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a))).then(r => r.json())
+const call = (fn, a) => fetch(API + '?fn=' + fn + '&a=' + encodeURIComponent(JSON.stringify(a)))
+  .then(r => r.json())
   .then(j => { if (!j.ok) throw new Error(j.error); return j.data; })
-  .catch(e => { throw new Error(/fetch|network/i.test(e.message) ? 'ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না। অনুগ্রহ করে আবার চেষ্টা করুন।' : e.message); });
-const run = (fn, ...a) => { if (!RO[fn] && !(fn === 'mgr' && READ_ACTS.indexOf(a[2]) >= 0)) VC = {}; load(1, MSG[fn] || (fn === 'mgr' && READ_ACTS.indexOf(a[2]) < 0 ? 'সংরক্ষণ হচ্ছে...' : 'লোড হচ্ছে...')); return call(fn, a).finally(() => load(-1)); };
+  .catch(e => {
+    throw new Error(/fetch|network/i.test(e.message) ? 'No internet connection. Please try again.' : e.message);
+  });
+const run = (fn, ...a) => {
+  if (!RO[fn] && !(fn === 'mgr' && READ_ACTS.indexOf(a[2]) >= 0)) VC = {};
+  load(1, MSG[fn] || (fn === 'mgr' && READ_ACTS.indexOf(a[2]) < 0 ? 'Saving...' : 'Loading...'));
+  return call(fn, a).finally(() => load(-1));
+};
 const runQ = (fn, ...a) => call(fn, a);
-const toast = (m, bad) => { const t = $('#toast'); t.textContent = m; t.className = (bad ? 'bad ' : '') + 'show'; clearTimeout(window._t); window._t = setTimeout(() => t.className = bad ? 'bad' : '', 3600); };
+const toast = (m, bad) => {
+  const t = $('#toast');
+  t.textContent = m;
+  t.className = (bad ? 'bad ' : '') + 'show';
+  clearTimeout(window._t);
+  window._t = setTimeout(() => t.className = bad ? 'bad' : '', 3600);
+};
 const err = e => toast(e.message, 1);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const wrap = h => { $('#v').innerHTML = h; window.scrollTo(0, 0); };
 const stamp = d => (d.t0 = Date.now(), d);
 let U, P, ROLE, I, NAMES = [], D, LM;
 
-// ---------- শুরু / লগইন / অ্যাকাউন্ট খোলা ----------
 function start() {
-  run('init').then(d => { I = stamp(d); $('#title').textContent = d.mess; const s = loadSess(); if (s) return doLogin(s.U, s.P, true); showLogin(); })
-    .catch(e => wrap(`<div class="card empty">${esc(e.message)}<button class="btn" onclick="start()">আবার চেষ্টা করুন</button></div>`));
+  run('init').then(d => {
+    I = stamp(d);
+    $('#title').textContent = d.mess || 'Mess Manager';
+    const s = loadSess();
+    if (s) return doLogin(s.U, s.P, true);
+    showLogin();
+  }).catch(e => wrap(`<div class="card empty">${esc(e.message)}<button class="btn" onclick="start()">Try again</button></div>`));
 }
 function showLogin() {
-  wrap(`<div class="card"><h2>স্বাগতম</h2><p class="sub">চালিয়ে যেতে লগইন করুন</p>
-  <label>আপনার নাম</label><select id="u"><option value="__manager">ম্যানেজার</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-  <label>৪ সংখ্যার পিন</label><input id="p" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
-  <button class="btn" onclick="login()">লগইন</button>
-  <button class="link" onclick="showSignup()">নতুন সদস্য? অ্যাকাউন্ট খুলুন</button></div>`);
+  wrap(`<div class="card"><h2>Welcome</h2><p class="sub">Log in to continue</p>
+  <label>Your name</label><select id="u"><option value="__manager">Manager</option>${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <label>4-digit PIN</label><input id="p" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  <button class="btn" onclick="login()">Log in</button>
+  <button class="link" onclick="showSignup()">New member? Create an account</button></div>`);
 }
 const SK = 'mess_session';
 const loadSess = () => { try { const s = JSON.parse(localStorage.getItem(SK)); return s && s.U && /^\d{4}$/.test(s.P) ? s : null; } catch (e) { return null; } };
@@ -134,60 +193,81 @@ const clearSess = () => { try { localStorage.removeItem(SK); } catch (e) {} };
 const logout = () => { clearSess(); location.reload(); };
 function login() {
   const u = $('#u').value, p = $('#p').value;
-  if (!/^\d{4}$/.test(p)) return toast('অনুগ্রহ করে আপনার ৪ সংখ্যার পিন দিন', 1);
+  if (!/^\d{4}$/.test(p)) return toast('Please enter your 4-digit PIN', 1);
   doLogin(u, p);
 }
 function doLogin(u, p, silent) {
   U = u; P = p;
   return run('boot', U, P).then(b => {
     ROLE = b.role; I = stamp(b.init); ME = b.me; VC = {};
-    VC['me' + JSON.stringify([U, P])] = b.me; VC['report' + JSON.stringify([U, P])] = b.rep;
-    $('#me').textContent = ROLE === 'M' ? 'ম্যানেজার' : U; $('#out').style.display = '';
-    saveSess(); buildTabs(); afterLogin(); go('rep');
+    VC['me' + JSON.stringify([U, P])] = b.me;
+    VC['report' + JSON.stringify([U, P])] = b.rep;
+    $('#me').textContent = ROLE === 'M' ? 'Manager' : U;
+    $('#out').style.display = '';
+    saveSess();
+    buildTabs();
+    afterLogin();
+    go('rep');
   }).catch(e => {
     if (!silent) return err(e);
-    if (/ইন্টারনেট/.test(e.message)) return wrap(`<div class="card empty">${esc(e.message)}<button class="btn" onclick="start()">আবার চেষ্টা করুন</button></div>`);
-    clearSess(); showLogin();
+    if (/internet/i.test(e.message)) return wrap(`<div class="card empty">${esc(e.message)}<button class="btn" onclick="start()">Try again</button></div>`);
+    clearSess();
+    showLogin();
   });
 }
 
 function showSignup() {
-  wrap(`<div class="card"><h2>অ্যাকাউন্ট খুলুন</h2><p class="sub">ম্যানেজার আপনার অনুরোধ অনুমোদন করবেন।</p>
-  <label>পূর্ণ নাম</label><input id="sn" placeholder="যেমন: রহিম উদ্দিন">
-  <label>নিজের জন্য ৪ সংখ্যার পিন বেছে নিন<div class="hint">এই পিন দিয়ে আপনি লগইন করবেন। যেমন: 4821</div></label><input id="sp" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
-  <button class="btn" onclick="signReview()">এগিয়ে যান</button><button class="link" onclick="showLogin()">লগইনে ফিরে যান</button></div>`);
+  wrap(`<div class="card"><h2>Create account</h2><p class="sub">The manager will approve your request.</p>
+  <label>Full name</label><input id="sn" placeholder="e.g. Rahim Uddin">
+  <label>Choose a 4-digit PIN for yourself<div class="hint">You will log in with this PIN. Example: 4821</div></label><input id="sp" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+  <button class="btn" onclick="signReview()">Continue</button><button class="link" onclick="showLogin()">Back to log in</button></div>`);
 }
 function signReview() {
   const n = $('#sn').value.trim(), p = $('#sp').value;
-  if (n.length < 2) return toast('অনুগ্রহ করে আপনার নাম লিখুন', 1);
-  if (!/^\d{4}$/.test(p)) return toast('পিন ৪ সংখ্যার হতে হবে', 1);
-  wrap(`<div class="card"><h3>অনুগ্রহ করে তথ্যগুলো দেখে নিন</h3><table><tr><td>নাম</td><td><b>${esc(n)}</b></td></tr><tr><td>পিন</td><td><b>${esc(p)}</b></td></tr></table>
-  <button class="btn" id="sc">নিশ্চিত করে অনুরোধ পাঠান</button><button class="btn sec" onclick="showSignup()">সম্পাদনা</button></div>`);
-  $('#sc').onclick = () => run('signup', n, p).then(() => wrap(`<div class="card empty"><h2>অনুরোধ পাঠানো হয়েছে ✅</h2><p>অনুগ্রহ করে ম্যানেজারের অনুমোদনের জন্য অপেক্ষা করুন। অনুমোদনের পর নাম ও পিন দিয়ে লগইন করুন।</p><button class="btn" onclick="start()">লগইনে ফিরে যান</button></div>`)).catch(err);
+  if (n.length < 2) return toast('Please enter your name', 1);
+  if (!/^\d{4}$/.test(p)) return toast('PIN must be 4 digits', 1);
+  wrap(`<div class="card"><h3>Please check your details</h3><table><tr><td>Name</td><td><b>${esc(n)}</b></td></tr><tr><td>PIN</td><td><b>${esc(p)}</b></td></tr></table>
+  <button class="btn" id="sc">Confirm and send request</button><button class="btn sec" onclick="showSignup()">Edit</button></div>`);
+  $('#sc').onclick = () => run('signup', n, p).then(() => wrap(`<div class="card empty"><h2>Request sent ✅</h2><p>Please wait for the manager to approve you. After approval, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to log in</button></div>`)).catch(err);
 }
 
-// ---------- নেভিগেশন ----------
 function buildTabs() {
-  const t = [['rep', 'রিপোর্ট'], ['day', 'আজকের মিল'], ['off', 'মিল বন্ধ'], ['guest', 'গেস্ট মিল'], ['baz', 'বাজার'], ['duty', 'বাজারের পালা']];
-  if (ROLE === 'M') t.splice(1, 0, ['req', 'অনুরোধ'], ['adv', 'অগ্রিম'], ['ann', 'ঘোষণা'], ['dep', 'জমা']), t.push(['mem', 'সদস্য'], ['bill', 'বিল'], ['mess', 'মেস'], ['ent', 'এন্ট্রি']); else t.splice(5, 0, ['pay', 'পেমেন্ট']);
-  $('#tabs').style.display = ''; $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+  const t = [['rep', 'Report'], ['day', "Today's Meals"], ['off', 'Meal Off'], ['guest', 'Guest Meal'], ['baz', 'Bazar'], ['duty', 'Bazar Duty']];
+  if (ROLE === 'M') t.splice(1, 0, ['req', 'Requests'], ['adv', 'Advance'], ['ann', 'Announcements'], ['dep', 'Deposit']), t.push(['mem', 'Members'], ['bill', 'Bills'], ['mess', 'Mess'], ['ent', 'Entries']);
+  else t.splice(5, 0, ['pay', 'Payments']);
+  $('#tabs').style.display = '';
+  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
 }
 function go(t) {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.id === 't_' + t));
-  CUR = t; if (t !== 'pay') PRE = null; VIEWS[t]();
+  document.body.classList.toggle('bilingual-rep', t === 'rep');
+  CUR = t;
+  if (t !== 'pay') PRE = null;
+  VIEWS[t]();
 }
 
-// ---------- এন্ট্রি ফর্ম ----------
 const FORMS = {
-  off: ['মিল বন্ধ', 'বাইরে থাকলে মিল বন্ধ রাখুন। আজ ও আগামী দিনের মিল বন্ধ করা যাবে।', [
-    ['offDate', 'মিল বন্ধ শুরুর তারিখ', 'date'], ['offShift', 'কোন বেলা থেকে', 'shift'],
-    ['onDate', 'আবার মিল চালুর তারিখ', 'date?', 'ফিরে আসার তারিখ জানা না থাকলে খালি রাখুন, পরে দিতে পারবেন।'], ['onShift', 'কোন বেলা থেকে', 'shift']]],
-  guest: ['গেস্ট মিল', 'আপনার অতিথি খেলে এখানে লিখুন।', [
-    ['date', 'তারিখ', 'date'], ['shift', 'কোন বেলা', 'shift'], ['count', 'অতিথির সংখ্যা', 'number', 'যেমন: ২']]],
-  baz: ['বাজারের খরচ', 'আপনি যে বাজার করেছেন তার খরচ এখানে লিখুন।', [
-    ['date', 'তারিখ', 'date'], ['amount', 'টাকার পরিমাণ (৳)', 'number', 'যেমন: ৫০০'], ['items', 'কী কী কিনেছেন (ঐচ্ছিক)', 'text', 'যেমন: চাল, ডাল, মাছ']]],
-  dep: ['জমা এন্ট্রি', 'সদস্যের জমা দেওয়া টাকা এখানে লিখুন।', [
-    ['date', 'তারিখ', 'date'], ['amount', 'টাকার পরিমাণ (৳)', 'number', 'যেমন: ৩০০০'], ['note', 'নোট (ঐচ্ছিক)', 'text']]]
+  off: ['Meal Off', 'Stop your meals while you are away. You can stop meals for today and future days.', [
+    ['offDate', 'Meal off from (date)', 'date'],
+    ['offShift', 'Starting from', 'shift'],
+    ['onDate', 'Meal on again from (date)', 'date?', 'Leave empty if you do not know your return date. You can add it later.'],
+    ['onShift', 'Starting from', 'shift']
+  ]],
+  guest: ['Guest Meal', 'Add guest meals eaten by your guests.', [
+    ['date', 'Date', 'date'],
+    ['shift', 'Meal', 'shift'],
+    ['count', 'Number of guests', 'number', 'e.g. 2']
+  ]],
+  baz: ['Bazar Expense', 'Record the bazar you bought.', [
+    ['date', 'Date', 'date'],
+    ['amount', 'Amount (৳)', 'number', 'e.g. 500'],
+    ['items', 'Items bought (optional)', 'text', 'e.g. Rice, lentils, fish']
+  ]],
+  dep: ['Deposit Entry', 'Record money deposited by a member.', [
+    ['date', 'Date', 'date'],
+    ['amount', 'Amount (৳)', 'number', 'e.g. 3000'],
+    ['note', 'Note (optional)', 'text']
+  ]]
 };
 function inp(k, l, t, h) {
   const ty = t.startsWith('date') ? 'date' : t === 'number' ? 'number' : 'text';
@@ -195,17 +275,20 @@ function inp(k, l, t, h) {
   if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select>`;
   return `<label>${l}${hint}</label><input id="f_${k}" type="${ty}" ${t === 'date' ? `value="${I.today}"` : ''} ${ty === 'number' ? 'inputmode="decimal" min="0"' : ''}>`;
 }
-// মিল বন্ধের নিয়ম (শুধু সদস্যদের জন্য)
-const hm = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+const hm = t => +String(t || '00:00').slice(0, 2) * 60 + +String(t || '00:00').slice(3, 5);
 function ruleBox() {
   const k = I.rules, n = hm(k.now) + Math.floor((Date.now() - I.t0) / 60000);
-  const st = n < hm(k.lunch) ? 'এখন আজকের লাঞ্চ ও ডিনার দুটোই বন্ধ করা যাবে।' : n < hm(k.dinner) ? 'আজকের লাঞ্চ বন্ধ করার সময় শেষ হয়েছে। এখন আজকের ডিনার এবং আগামী দিনের মিল বন্ধ করতে পারবেন।' : 'আজকের দুই বেলার মিল বন্ধ করার সময় শেষ হয়েছে। এখন আগামীকাল থেকে বন্ধ করতে পারবেন।';
-  return `<div class="alert info" style="margin:0 0 4px"><div>নিয়ম: আজকের লাঞ্চ ${bnTime(k.lunch)} পর্যন্ত এবং আজকের ডিনার ${bnTime(k.dinner)} পর্যন্ত বন্ধ করা যায়। কারণ রান্না হয়ে গেলে খাবার নষ্ট হয়। আগে খাওয়া হয়ে গেছে এমন কোনো বেলার মিল বন্ধ করা যায় না।<br><span style="font-weight:500">${st}</span></div></div>`;
+  const st = n < hm(k.lunch)
+    ? "You can stop both lunch and dinner for today."
+    : n < hm(k.dinner)
+      ? "The time to stop today's lunch is over. You can stop today's dinner and future meals."
+      : "The time to stop today's meals is over. You can stop meals from tomorrow.";
+  return `<div class="alert info" style="margin:0 0 4px"><div>Rule: today's lunch can be stopped until ${enTime(k.lunch)} and today's dinner until ${enTime(k.dinner)}. Food is wasted once cooking is done. Meals that have already been eaten cannot be stopped.<br><span style="font-weight:500">${st}</span></div></div>`;
 }
 async function form(type) {
   const [title, sub, fs] = FORMS[type];
-  const mem = ROLE === 'M' ? `<label>সদস্য</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
-  wrap(`<div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${type === 'off' && ROLE === 'U' ? ruleBox() : ''}${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">এগিয়ে যান</button></div><div id="offl"></div>`);
+  const mem = ROLE === 'M' ? `<label>Member</label><select id="f_member">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
+  wrap(`<div class="card"><h2>${title}</h2><p class="sub">${sub}</p>${type === 'off' && ROLE === 'U' ? ruleBox() : ''}${mem}${fs.map(x => inp(...x)).join('')}<button class="btn" onclick="review('${type}')">Continue</button></div><div id="offl"></div>`);
   if (type === 'off' && ROLE === 'U') offList();
 }
 function review(type) {
@@ -213,17 +296,17 @@ function review(type) {
   if (ROLE === 'M') d.member = $('#f_member').value;
   fs.forEach(x => d[x[0]] = $('#f_' + x[0]).value);
   const need = fs.filter(x => x[2] === 'date' || x[2] === 'number');
-  if (need.some(x => !d[x[0]] || (x[2] === 'number' && !(Number(d[x[0]]) > 0)))) return toast('অনুগ্রহ করে সব প্রয়োজনীয় ঘর পূরণ করুন', 1);
+  if (need.some(x => !d[x[0]] || (x[2] === 'number' && !(Number(d[x[0]]) > 0)))) return toast('Please fill in all required fields', 1);
   const val = x => x[2] === 'shift' ? SH[d[x[0]]] : x[2].startsWith('date') ? (d[x[0]] ? fmt(d[x[0]]) : '-') : x[2] === 'number' && x[0] === 'amount' ? tk(d[x[0]]) : (d[x[0]] || '-');
-  const rows = [['সদস্য', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].replace(/\s*\(.*\)/, ''), val(x)]));
-  wrap(`<div class="card"><h3>অনুগ্রহ করে তথ্যগুলো দেখে নিন</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
-  <button class="btn" id="cf">নিশ্চিত করুন</button><button class="btn sec" onclick="go('${type}')">সম্পাদনা</button></div>`);
-  $('#cf').onclick = () => run('save', U, P, type, d).then(() => { toast('সফলভাবে সংরক্ষণ হয়েছে'); go(type); }).catch(err);
+  const rows = [['Member', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].replace(/\s*\(.*\)/, ''), val(x)]));
+  wrap(`<div class="card"><h3>Please check your details</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
+  <button class="btn" id="cf">Confirm</button><button class="btn sec" onclick="go('${type}')">Edit</button></div>`);
+  $('#cf').onclick = () => run('save', U, P, type, d).then(() => { toast('Saved successfully'); go(type); }).catch(err);
 }
 function offHtml(l) {
   const open = l.filter(r => !r[5]);
-  return `<div class="card"><h3>আমার মিল বন্ধের তালিকা</h3>${l.length ? `<table><tr><th>বন্ধ শুরু</th><th>আবার চালু</th></tr>${l.slice(0, 12).map(r => `<tr><td>${fmt(r[3])} · ${SH[r[4]]}</td><td>${r[5] ? fmt(r[5]) + ' · ' + SH[r[6]] : 'এখনো দেওয়া হয়নি'}</td></tr>`).join('')}</table>` : '<div class="empty">এখনো কোনো এন্ট্রি নেই</div>'}</div>
-  ${open.map(r => `<div class="card"><h3>${fmt(r[3])} থেকে বন্ধ আছে, ফিরে এসেছেন?</h3><p class="sub">ফিরে এলে মিল আবার চালু করুন। আজকের লাঞ্চ ও ডিনারের সময়সীমার পরে আজকের মিল চালু করা যাবে না।</p><div class="flex"><input type="date" id="r_${r[0]}" value="${I.today}"><select id="s_${r[0]}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select></div><button class="btn" onclick="ret('${r[0]}')">মিল চালু করুন</button></div>`).join('')}`;
+  return `<div class="card"><h3>My meal-off list</h3>${l.length ? `<table><tr><th>Off from</th><th>On again</th></tr>${l.slice(0, 12).map(r => `<tr><td>${fmt(r[3])} · ${SH[r[4]]}</td><td>${r[5] ? fmt(r[5]) + ' · ' + SH[r[6]] : 'Not set yet'}</td></tr>`).join('')}</table>` : '<div class="empty">No entries yet</div>'}</div>
+  ${open.map(r => `<div class="card"><h3>Off since ${fmt(r[3])}. Are you back?</h3><p class="sub">When you return, please turn your meals on again. Today's meals cannot be turned on after today's deadline.</p><div class="flex"><input type="date" id="r_${r[0]}" value="${I.today}"><select id="s_${r[0]}"><option value="L">${SH.L}</option><option value="D">${SH.D}</option></select></div><button class="btn" onclick="ret('${r[0]}')">Turn meal on</button></div>`).join('')}`;
 }
 function offList() {
   const k = 'myOffs' + U, draw = l => { const e = $('#offl'); if (e) e.innerHTML = offHtml(l); };
@@ -231,126 +314,178 @@ function offList() {
   call('myOffs', [U, P]).then(l => { VC[k] = l; if (!typing()) draw(l); }).catch(err);
 }
 function ret(id) {
-  run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value).then(() => { toast('মিল আবার চালু হয়েছে'); go('off'); }).catch(err);
+  run('setReturn', U, P, id, $('#r_' + id).value, $('#s_' + id).value).then(() => { toast('Meal is on again'); go('off'); }).catch(err);
 }
 
-// ---------- রিপোর্ট ----------
 function vDay() {
-  wrap(`<div class="card"><h2>আজকের মিল</h2><p class="sub">কে কে খাবে দেখুন।</p><label>তারিখ</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`); loadDay();
+  wrap(`<div class="card"><h2>Today's Meals</h2><p class="sub">See who is eating.</p><label>Date</label><input type="date" id="dd" value="${I.today}" onchange="loadDay()"><div id="dr"></div></div>`);
+  loadDay();
 }
 function drawDay(d) {
-  $('#dr').innerHTML = !d.ok ? '<div class="empty">মেস এখনো শুরু হয়নি।</div>' : ['L', 'D'].map(s => {
-    if (d.cl && d.cl[s]) return `<h3 style="margin-top:16px">${SH[s]}</h3><div class="alert red" style="margin:0">এই বেলায় মেস বন্ধ থাকবে।</div>`;
+  $('#dr').innerHTML = !d.ok ? '<div class="empty">The mess has not started yet.</div>' : ['L', 'D'].map(s => {
+    if (d.cl && d.cl[s]) return `<h3 style="margin-top:16px">${SH[s]}</h3><div class="alert red" style="margin:0">The mess is closed for this meal.</div>`;
     const g = d['g' + s.toLowerCase()];
-    return `<h3 style="margin-top:16px">${SH[s]} · ${bn(d[s].length + g)}টি মিল</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">কেউ নেই</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${bn(g)} গেস্ট</span>` : ''}</div>`; }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:16px">স্থগিত (বাকি টাকা আছে)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
+    return `<h3 style="margin-top:16px">${SH[s]} · ${f(d[s].length + g)} meals</h3><div>${d[s].map(n => `<span class="badge pos" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('') || '<span class="sub">Nobody</span>'}${g ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">+${f(g)} guest</span>` : ''}</div>`;
+  }).join('') + (d.fz && d.fz.length ? `<h3 style="margin-top:16px">Frozen (unpaid dues)</h3><div>${d.fz.map(n => `<span class="badge neg" style="display:inline-block;margin:0 6px 6px 0">${esc(n)}</span>`).join('')}</div>` : '');
 }
 function loadDay() {
   const dt = $('#dd').value, k = 'daily' + dt, hit = VC[k], ok = () => $('#dr') && $('#dd') && $('#dd').value === dt;
-  if (hit) drawDay(hit); else load(1, 'লোড হচ্ছে...');
+  if (hit) drawDay(hit); else load(1, 'Loading...');
   call('daily', [dt]).then(d => { VC[k] = d; if (!hit) load(-1); if (ok()) drawDay(d); }).catch(e => { if (!hit) load(-1); err(e); });
 }
+const biLabel = (en, bn) => `${en} <span class="bn-sub">${bn}</span>`;
 async function vRep() {
-  let d; try { d = await rc('report', U, P); } catch (e) { return err(e); }
+  let d;
+  try { d = await rc('report', U, P); } catch (e) { return err(e); }
   D = d;
-  if (!d.ok) return wrap('<div class="card empty"><h2>মেস এখনো শুরু হয়নি</h2><p>ম্যানেজার এখনো মেস শুরু করেননি।</p></div>');
+  if (!d.ok) return wrap(`<div class="card empty"><h2>${biLabel('Mess not started', 'মেস এখনো শুরু হয়নি')}</h2><p>${biLabel('The manager has not started the mess yet.', 'ম্যানেজার এখনো মেস শুরু করেননি।')}</p></div>`);
   NAMES = Object.keys(d.m);
-  const sum = `<div class="card"><h2>মাসের সারসংক্ষেপ</h2><p class="sub">${fmt(d.cfg.Start)} থেকে ${d.cfg.End ? fmt(d.cfg.End) : 'আজ পর্যন্ত (চলছে)'} · ${bn(d.days)} দিন</p><div class="tiles">
-  <div class="tile"><span>মোট বাজার</span><b>${tk(d.tb)}</b></div><div class="tile"><span>মোট মিল</span><b>${bn(d.tm)}</b></div>
-  <div class="tile"><span>মিল রেট</span><b>${tk(d.rate)}</b></div><div class="tile"><span>নির্ধারিত বিল</span><b>${tk(d.fixed)}</b></div>
-  <div class="tile"><span>মোট জমা</span><b>${tk(d.td)}</b></div><div class="tile"><span>সদস্য</span><b>${bn(d.cnt)}</b></div></div></div>`;
+  const sum = `<div class="card"><h2>${biLabel('Month Summary', 'মাসের সারসংক্ষেপ')}</h2><p class="sub">${fmtBi(d.cfg.Start)} to ${d.cfg.End ? fmtBi(d.cfg.End) : 'Today (Running) <span class="bn-sub">(আজ পর্যন্ত — চলছে)</span>'} · ${f(d.days)} days <span class="bn-sub">(${f(d.days)} দিন)</span></p><div class="tiles">
+  <div class="tile"><span>${biLabel('Total bazar', 'মোট বাজার')}</span><b>${tk(d.tb)}</b></div>
+  <div class="tile"><span>${biLabel('Total meals', 'মোট মিল')}</span><b>${f(d.tm)}</b></div>
+  <div class="tile"><span>${biLabel('Meal rate', 'মিল রেট')}</span><b>${tk(d.rate)}</b></div>
+  <div class="tile"><span>${biLabel('Fixed bills', 'নির্ধারিত বিল')}</span><b>${tk(d.fixed)}</b></div>
+  <div class="tile"><span>${biLabel('Total deposit', 'মোট জমা')}</span><b>${tk(d.td)}</b></div>
+  <div class="tile"><span>${biLabel('Members', 'সদস্য')}</span><b>${f(d.cnt)}</b></div></div></div>`;
   if (ROLE !== 'M') return wrap(sum + detail(0));
-  wrap(sum + `<div class="card"><h3>সদস্যদের রিপোর্ট</h3><p class="sub">পুরো রিপোর্ট দেখতে নামে চাপ দিন।</p>${NAMES.map((n, i) => { const x = d.m[n], p = x.bal >= 0;
-    return `<div class="row" onclick="openMember(${i})"><div><b>${esc(n)}</b><small>${bn(x.meals + x.guest)}টি মিল · খরচ ${tk(x.cost)}${x.blocked ? ' · <span style="color:#dc2626">স্থগিত</span>' : ''}</small></div><span class="badge ${p ? 'pos' : 'neg'}">${p ? 'পাবেন' : 'দেবেন'} ${tk(Math.abs(x.bal))}</span></div>`; }).join('') || '<div class="empty">এখনো কোনো সদস্য নেই</div>'}</div>`);
+  wrap(sum + `<div class="card"><h3>${biLabel('Member Reports', 'সদস্যদের রিপোর্ট')}</h3><p class="sub">${biLabel('Tap a name to open the full report.', 'পুরো রিপোর্ট দেখতে নামে চাপ দিন।')}</p>${NAMES.map((n, i) => {
+    const x = d.m[n], p = x.bal >= 0;
+    return `<div class="row" onclick="openMember(${i})"><div><b>${esc(n)}</b><small>${f(x.meals + x.guest)} meals · cost ${tk(x.cost)}${x.blocked ? ' · <span style="color:#dc2626">Frozen / স্থগিত</span>' : ''}<span class="bn-sub">${f(x.meals + x.guest)}টি মিল · খরচ ${tk(x.cost)}</span></small></div><span class="badge ${p ? 'pos' : 'neg'}">${p ? 'Gets' : 'Pays'} ${tk(Math.abs(x.bal))}<span class="bn-sub">${p ? 'পাবেন' : 'দেবেন'} ${tk(Math.abs(x.bal))}</span></span></div>`;
+  }).join('') || '<div class="empty">No members yet</div>'}</div>`);
 }
-function openMember(i) { wrap(`<button class="btn sec sm" style="margin-bottom:12px" onclick="vRep()">← সব সদস্য</button>` + detail(i)); }
+function openMember(i) {
+  wrap(`<button class="btn sec sm" style="margin-bottom:12px" onclick="vRep()">← All members <span class="bn-sub">(সব সদস্য)</span></button>` + detail(i));
+}
 function detail(i) {
   const n = NAMES[i], x = D.m[n], p = x.bal >= 0, sg = v => (v < 0 ? '−' : '+') + tk(Math.abs(v)), exp = x.mealCost + x.share;
-  const H = t => `<h3 style="margin:22px 0 6px">${t}</h3>`, col = p ? '#166534' : '#991b1b';
-  const prev = x.open > 0 ? `<tr><td>আগের মাসের বেঁচে যাওয়া টাকা</td><td>${tk(x.open)}</td></tr>` : x.open < 0 ? `<tr><td>আগের মাসের বাকি</td><td style="color:#991b1b">${tk(-x.open)}</td></tr>` : `<tr><td>আগের মাসের কোনো হিসাব নেই</td><td>${tk(0)}</td></tr>`;
-  const bills = D.bills.length ? D.bills.map(b => `<tr><td>${esc(b[0])} (অংশ)</td><td>${tk(D.cnt ? b[1] / D.cnt : 0)}</td></tr>`).join('') + `<tr><td><b>মোট বিল</b></td><td><b>${tk(x.share)}</b></td></tr>` : `<tr><td>এই মাসে কোনো বিল নেই</td><td>${tk(0)}</td></tr>`;
-  return `<div class="card"><h2>${esc(n)}</h2><p class="sub">${D.cfg.Start} থেকে ${D.cfg.End || 'আজ পর্যন্ত'}</p>
-  <div class="banner ${p ? 'pos' : 'neg'}">${p ? 'আপনি ফেরত পাবেন' : 'আপনাকে দিতে হবে'}<b>${tk(Math.abs(x.bal))}</b></div>
-  ${H('১. জমা ও আগের মাসের হিসাব')}<table>${prev}<tr><td>এই মাসের জমা</td><td>${tk(x.dep)}</td></tr></table>
-  ${H('২. মিলের খরচ (বাজার খরচ)')}<table><tr><td>মিল (${bn(x.meals)}${x.guest ? ' + ' + bn(x.guest) + ' গেস্ট' : ''}) × ${f(D.rate)}</td><td><b>${tk(x.mealCost)}</b></td></tr></table>
-  <p class="sub" style="margin:6px 0 0">মিল রেট = মোট বাজার ${tk(D.tb)} ÷ মোট মিল ${bn(D.tm)} = ${tk(D.rate)}</p>
-  ${H('৩. বিল')}<table>${bills}</table>
-  ${H('৪. মোট খরচ')}<table><tr><td>মিলের খরচ</td><td>${tk(x.mealCost)}</td></tr><tr><td>বিল</td><td>${tk(x.share)}</td></tr><tr><td><b>মোট খরচ</b></td><td><b>${tk(exp)}</b></td></tr></table>
-  ${H('৫. চূড়ান্ত হিসাব')}<table><tr><td>জমা</td><td>${sg(x.dep)}</td></tr><tr><td>আপনার করা বাজার (${bn(x.bl.length)} দিন)</td><td>${sg(x.bazar)}</td></tr>${x.open ? `<tr><td>${x.open > 0 ? 'আগের মাসের বেঁচে যাওয়া টাকা' : 'আগের মাসের বাকি'}</td><td>${sg(x.open)}</td></tr>` : ''}<tr><td>মোট খরচ</td><td>${sg(-exp)}</td></tr>
-  <tr><td><b>${p ? 'আপনি ফেরত পাবেন' : 'আপনাকে দিতে হবে'}</b></td><td><b style="color:${col};font-size:18px">${tk(Math.abs(x.bal))}</b></td></tr></table>
-  ${x.bl.length ? `<h3 style="margin-top:22px">বাজারের তালিকা</h3><table><tr><th>তারিখ</th><th>কী কিনেছেন</th><th>টাকা</th></tr>${x.bl.map(r => `<tr><td>${fmt(r[0])}</td><td>${esc(r[2]) || '-'}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
-  ${x.dl.length ? `<h3 style="margin-top:22px">জমার তালিকা</h3><table><tr><th>তারিখ</th><th>টাকা</th></tr>${x.dl.map(r => `<tr><td>${fmt(r[0])}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
-  <div class="flex" style="margin-top:14px"><button class="btn" onclick="share(${i})">হোয়াটসঅ্যাপের জন্য কপি</button><button class="btn sec" onclick="window.print()">প্রিন্ট / পিডিএফ</button></div></div>`;
+  const H = (en, bn) => `<h3 style="margin:22px 0 6px">${biLabel(en, bn)}</h3>`, col = p ? '#166534' : '#991b1b';
+  const prev = x.open > 0
+    ? `<tr><td>${biLabel('Previous month leftover', 'আগের মাসের বেঁচে যাওয়া টাকা')}</td><td>${tk(x.open)}</td></tr>`
+    : x.open < 0
+      ? `<tr><td>${biLabel('Previous month due', 'আগের মাসের বাকি')}</td><td style="color:#991b1b">${tk(-x.open)}</td></tr>`
+      : `<tr><td>${biLabel('No previous balance', 'আগের মাসের কোনো হিসাব নেই')}</td><td>${tk(0)}</td></tr>`;
+  const bills = D.bills.length
+    ? D.bills.map(b => `<tr><td>${esc(b[0])} (share / অংশ)</td><td>${tk(D.cnt ? b[1] / D.cnt : 0)}</td></tr>`).join('') + `<tr><td><b>${biLabel('Total bills', 'মোট বিল')}</b></td><td><b>${tk(x.share)}</b></td></tr>`
+    : `<tr><td>${biLabel('No bills this month', 'এই মাসে কোনো বিল নেই')}</td><td>${tk(0)}</td></tr>`;
+  return `<div class="card"><h2>${esc(n)}</h2><p class="sub">${fmtBi(D.cfg.Start)} to ${D.cfg.End ? fmtBi(D.cfg.End) : 'Today <span class="bn-sub">(আজ পর্যন্ত)</span>'}</p>
+  <div class="banner ${p ? 'pos' : 'neg'}">${p ? biLabel('You will get back', 'আপনি ফেরত পাবেন') : biLabel('You need to pay', 'আপনাকে দিতে হবে')}<b>${tk(Math.abs(x.bal))}</b></div>
+  ${H('1. Deposit & previous month', '১. জমা ও আগের মাসের হিসাব')}<table>${prev}<tr><td>${biLabel('Deposit (this month)', 'এই মাসের জমা')}</td><td>${tk(x.dep)}</td></tr></table>
+  ${H('2. Meal cost (bazar cost)', '২. মিলের খরচ (বাজার খরচ)')}<table><tr><td>${biLabel('Meals', 'মিল')} (${f(x.meals)}${x.guest ? ' + ' + f(x.guest) + ' guest/গেস্ট' : ''}) × ${f(D.rate)}</td><td><b>${tk(x.mealCost)}</b></td></tr></table>
+  <p class="sub" style="margin:6px 0 0">Meal rate = total bazar ${tk(D.tb)} ÷ total meals ${f(D.tm)} = ${tk(D.rate)} <span class="bn-sub">(মিল রেট = মোট বাজার ${tk(D.tb)} ÷ মোট মিল ${f(D.tm)} = ${tk(D.rate)})</span></p>
+  ${H('3. Bills', '৩. বিল')}<table>${bills}</table>
+  ${H('4. Total expense', '৪. মোট খরচ')}<table><tr><td>${biLabel('Meal cost', 'মিলের খরচ')}</td><td>${tk(x.mealCost)}</td></tr><tr><td>${biLabel('Bills', 'বিল')}</td><td>${tk(x.share)}</td></tr><tr><td><b>${biLabel('Total expense', 'মোট খরচ')}</b></td><td><b>${tk(exp)}</b></td></tr></table>
+  ${H('5. Final calculation', '৫. চূড়ান্ত হিসাব')}<table><tr><td>${biLabel('Deposit', 'জমা')}</td><td>${sg(x.dep)}</td></tr><tr><td>${biLabel('Bazar you did', 'আপনার করা বাজার')} (${f(x.bl.length)} days/দিন)</td><td>${sg(x.bazar)}</td></tr>${x.open ? `<tr><td>${x.open > 0 ? biLabel('Previous month leftover', 'আগের মাসের বেঁচে যাওয়া টাকা') : biLabel('Previous month due', 'আগের মাসের বাকি')}</td><td>${sg(x.open)}</td></tr>` : ''}<tr><td>${biLabel('Total expense', 'মোট খরচ')}</td><td>${sg(-exp)}</td></tr>
+  <tr><td><b>${p ? biLabel('You will get back', 'আপনি ফেরত পাবেন') : biLabel('You need to pay', 'আপনাকে দিতে হবে')}</b></td><td><b style="color:${col};font-size:18px">${tk(Math.abs(x.bal))}</b></td></tr></table>
+  ${x.bl.length ? `<h3 style="margin-top:22px">${biLabel('Bazar list', 'বাজারের তালিকা')}</h3><table><tr><th>${biLabel('Date', 'তারিখ')}</th><th>${biLabel('Items bought', 'কী কিনেছেন')}</th><th>${biLabel('Amount', 'টাকা')}</th></tr>${x.bl.map(r => `<tr><td>${fmtBi(r[0])}</td><td>${esc(r[2]) || '-'}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
+  ${x.dl.length ? `<h3 style="margin-top:22px">${biLabel('Deposit list', 'জমার তালিকা')}</h3><table><tr><th>${biLabel('Date', 'তারিখ')}</th><th>${biLabel('Amount', 'টাকা')}</th></tr>${x.dl.map(r => `<tr><td>${fmtBi(r[0])}</td><td>${tk(r[1])}</td></tr>`).join('')}</table>` : ''}
+  <div class="flex" style="margin-top:14px"><button class="btn" onclick="share(${i})">${biLabel('Copy for WhatsApp', 'হোয়াটসঅ্যাপের জন্য কপি')}</button><button class="btn sec" onclick="window.print()">${biLabel('Print / PDF', 'প্রিন্ট / পিডিএফ')}</button></div></div>`;
 }
 function share(i) {
   const n = NAMES[i], x = D.m[n], sg = v => (v < 0 ? '-' : '+') + tk(Math.abs(v)), exp = x.mealCost + x.share;
-  const t = [`${n} - মেসের রিপোর্ট (${D.cfg.Start} থেকে ${D.cfg.End || 'আজ পর্যন্ত'})`, '',
-    '১. জমা ও আগের মাসের হিসাব', x.open ? `${x.open > 0 ? 'আগের মাসের বেঁচে যাওয়া টাকা' : 'আগের মাসের বাকি'}: ${tk(Math.abs(x.open))}` : 'আগের মাসের কোনো হিসাব নেই', `জমা: ${tk(x.dep)}`, '',
-    '২. মিলের খরচ', `${bn(x.meals + x.guest)}টি মিল × ${f(D.rate)} = ${tk(x.mealCost)}`, '', '৩. বিল'].concat(D.bills.map(b => `${b[0]}: ${tk(D.cnt ? b[1] / D.cnt : 0)}`),
-    [`মোট বিল: ${tk(x.share)}`, '', `৪. মোট খরচ: ${tk(exp)}`, '', '৫. চূড়ান্ত হিসাব', `জমা ${sg(x.dep)}`, `আপনার করা বাজার ${sg(x.bazar)}` + (x.bl.length ? ' (' + x.bl.map(r => fmt(r[0]) + ' ' + tk(r[1])).join(', ') + ')' : '')],
-    x.open ? [`আগের মাস ${sg(x.open)}`] : [], [`মোট খরচ ${sg(-exp)}`, `${x.bal >= 0 ? 'ফেরত পাবেন' : 'দিতে হবে'}: ${tk(Math.abs(x.bal))}`]).join('\n');
-  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('কপি হয়েছে। হোয়াটসঅ্যাপে পেস্ট করুন।')).catch(() => prompt('এই লেখাটি কপি করুন', t));
+  const t = [
+    `${n} - Mess Report (${D.cfg.Start} to ${D.cfg.End || 'Today'})`,
+    '',
+    '1. Deposit & previous month',
+    x.open ? `${x.open > 0 ? 'Previous month leftover' : 'Previous month due'}: ${tk(Math.abs(x.open))}` : 'No previous balance',
+    `Deposit: ${tk(x.dep)}`,
+    '',
+    '2. Meal cost',
+    `${f(x.meals + x.guest)} meals × ${f(D.rate)} = ${tk(x.mealCost)}`,
+    '',
+    '3. Bills'
+  ].concat(
+    D.bills.map(b => `${b[0]}: ${tk(D.cnt ? b[1] / D.cnt : 0)}`),
+    [
+      `Total bills: ${tk(x.share)}`,
+      '',
+      `4. Total expense: ${tk(exp)}`,
+      '',
+      '5. Final calculation',
+      `Deposit ${sg(x.dep)}`,
+      `Bazar you did ${sg(x.bazar)}` + (x.bl.length ? ' (' + x.bl.map(r => fmt(r[0]) + ' ' + tk(r[1])).join(', ') + ')' : ''),
+      x.open ? [`Previous month ${sg(x.open)}`] : [],
+      `Total expense ${sg(-exp)}`,
+      `${x.bal >= 0 ? 'Gets back' : 'Needs to pay'}: ${tk(Math.abs(x.bal))}`
+    ].flat()
+  ).join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+    .then(() => toast('Copied. Paste it in WhatsApp.'))
+    .catch(() => prompt('Copy this text', t));
 }
-// ---------- ম্যানেজার ----------
-const M = (act, d) => READ_ACTS.indexOf(act) >= 0 ? rc('mgr', U, P, act, d) : run('mgr', U, P, act, d);
-async function vMem() {
-  let l; try { l = await M('lists'); } catch (e) { return err(e); }
-  LM = l.members; const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending'), act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
-  wrap(`${pend.length ? `<div class="card"><h3>অনুমোদনের অপেক্ষায় (${bn(pend.length)})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><b>${esc(r[0])}</b><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">অনুমোদন</button><button class="btn sm red" onclick="appr(${i},'reject')">বাতিল</button></div></div>`).join('')}</div>` : ''}
-  <div class="card"><h3>সদস্য (${bn(act.length)})</h3><p class="sub">সক্রিয় সদস্যরা বিল ভাগ করে নেন। নিষ্ক্রিয় সদস্য হিসাবের বাইরে থাকেন।</p>${act.map(([r, i]) => `<label>${esc(r[0])}</label><div class="flex"><input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric"><select id="ma${i}"><option value="Yes" ${r[2] === 'Yes' ? 'selected' : ''}>সক্রিয়</option><option value="No" ${r[2] === 'No' ? 'selected' : ''}>নিষ্ক্রিয়</option></select><button class="btn sm" style="flex:0 0 auto" onclick="svMem(${i})">সংরক্ষণ</button></div>`).join('') || '<div class="empty">এখনো কোনো সদস্য নেই</div>'}</div>
-  <div class="card"><h3>নতুন সদস্য যোগ করুন</h3><label>পূর্ণ নাম</label><input id="nn"><label>৪ সংখ্যার পিন</label><input id="np" maxlength="4" inputmode="numeric"><button class="btn" onclick="addMem()">সদস্য যোগ করুন</button></div>`);
-}
-const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'সদস্যকে অনুমোদন করা হয়েছে' : 'অনুরোধ বাতিল করা হয়েছে'); I = stamp(await run('init')); vMem(); }).catch(err);
-const svMem = i => M('member', {name: LM[i][0], pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('সংরক্ষণ হয়েছে'); I = stamp(await run('init')); vMem(); }).catch(err);
-const addMem = () => M('member', {name: $('#nn').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('সদস্য যোগ হয়েছে'); I = stamp(await run('init')); vMem(); }).catch(err);
-async function vBill() {
-  let l; try { l = (await M('lists')).bills.slice(); } catch (e) { return err(e); }
-  while (l.length < 6) l.push(['', '']);
-  wrap(`<div class="card"><h2>নির্ধারিত বিল</h2><p class="sub">সব সক্রিয় সদস্য সমান ভাগে দেবেন। যেমন: বুয়া, ওয়াই-ফাই, বিদ্যুৎ</p>${l.map((r, i) => `<label>বিল ${bn(i + 1)}</label><div class="flex"><input id="bn${i}" placeholder="বিলের নাম" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="টাকা" value="${esc(r[1])}"></div>`).join('')}<button class="btn" onclick="svBill(${l.length})">বিল সংরক্ষণ করুন</button></div>`);
-}
-const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('বিল সংরক্ষণ হয়েছে')).catch(err);
-async function vMess() {
-  let l; try { l = await M('lists'); } catch (e) { return err(e); }
-  const c = l.cfg, k = l.rules;
-  wrap(`<div class="card"><h2>মেস সেটিংস</h2><div class="tiles"><div class="tile"><span>শুরুর তারিখ</span><b style="font-size:16px">${c.Start ? fmt(c.Start) : 'শুরু হয়নি'}</b></div><div class="tile"><span>শেষের তারিখ</span><b style="font-size:16px">${c.End ? fmt(c.End) : 'চলছে'}</b></div></div>
-  <label>মেস শুরুর তারিখ</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">মেস শুরু করুন</button>
-  <label>মেস শেষ করার তারিখ<div class="hint">বেতন পাওয়ার দিন মেস শেষ করুন</div></label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="mm('close','mend')">মেস শেষ করুন</button></div>
-  <div class="card"><h3>মিল বন্ধ করার সময়সীমা</h3><p class="sub">আজকের লাঞ্চ ও ডিনার এই সময়ের পর আর বন্ধ করা যাবে না। রান্না হয়ে গেলে খাবার নষ্ট হয়, তাই সময়টি ঠিক করে দিন।</p>
-  <div class="flex"><div><label>আজকের লাঞ্চ বন্ধের শেষ সময়</label><input type="time" id="cl" value="${k.lunch}"></div><div><label>আজকের ডিনার বন্ধের শেষ সময়</label><input type="time" id="cd" value="${k.dinner}"></div></div>
-  <button class="btn" onclick="svCuts()">সময় সংরক্ষণ করুন</button></div>
-  <div class="card"><h3>নতুন মাস শুরু করুন</h3><p class="sub">এই মাসের হিসাব ব্যাকআপ ফাইলে জমা রেখে নতুন মাসের জন্য সব এন্ট্রি মুছে ফেলা হবে। আগে মেস শেষ করুন।</p><button class="btn sec" onclick="nm()">নতুন মাস শুরু করুন</button><button class="btn sec" onclick="M('sheets').then(()=>toast('রিপোর্ট শিট আপডেট হয়েছে')).catch(err)">রিপোর্ট শিট আপডেট করুন</button></div>
-  <div class="card"><h3>ম্যানেজারের পিন বদলান</h3><input id="mpin" maxlength="4" inputmode="numeric" placeholder="নতুন ৪ সংখ্যার পিন"><button class="btn" onclick="cp()">পিন সংরক্ষণ করুন</button></div>`);
-}
-const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('সম্পন্ন হয়েছে'); vMess(); }).catch(err);
-const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value}).then(async () => { toast('সময়সীমা সংরক্ষণ হয়েছে'); I = stamp(await run('init')); vMess(); }).catch(err);
-const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('পিন বদলানো হয়েছে'); }).catch(err);
-const nm = () => confirm('এই মাসের হিসাব ব্যাকআপ ফাইলে রেখে সব এন্ট্রি মুছে ফেলা হবে। আপনি কি চালিয়ে যেতে চান?') && M('newMonth').then(u => { toast('নতুন মাস শুরু হয়েছে। ব্যাকআপ আপনার গুগল ড্রাইভে রাখা হয়েছে।'); vMess(); }).catch(err);
-async function vEnt() {
-  let e; try { e = (await M('lists')).ent; } catch (x) { return err(x); }
-  const T = {MealOff: 'মিল বন্ধ', Guests: 'গেস্ট মিল', Bazar: 'বাজার', Deposits: 'জমা'};
-  const cell = v => /^\d{4}-\d{2}-\d{2}$/.test(v) ? fmt(v) : v === 'L' ? SH.L : v === 'D' ? SH.D : esc(v);
-  wrap(Object.keys(e).map(k => `<div class="card"><h3>${T[k]}</h3>${e[k].length ? `<table>${e[k].map(r => `<tr><td>${r.slice(2).filter(v => v !== '').map(cell).join(' · ')}</td><td><button class="btn sm red" onclick="del('${k}','${r[0]}')">মুছুন</button></td></tr>`).join('')}</table>` : '<div class="empty">কোনো এন্ট্রি নেই</div>'}</div>`).join(''));
-}
-const del = (s, id) => confirm('এই এন্ট্রিটি মুছে ফেলবেন?') && M('del', {sheet: s, id: id}).then(() => { toast('মুছে ফেলা হয়েছে'); vEnt(); }).catch(err);
 
-// ---------- নোটিফিকেশন (লগইনের পর উইন্ডো, তারপর উপরে ছোট করে) ----------
+const mgrCall = (act, d) => READ_ACTS.indexOf(act) >= 0 ? rc('mgr', U, P, act, d) : run('mgr', U, P, act, d);
+const M = mgrCall;
+async function vMem() {
+  let l;
+  try { l = await mgrCall('lists'); } catch (e) { return err(e); }
+  LM = l.members;
+  const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending');
+  const act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
+  wrap(`${pend.length ? `<div class="card"><h3>Waiting for approval (${f(pend.length)})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><b>${esc(r[0])}</b><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
+  <div class="card"><h3>Members (${f(act.length)})</h3><p class="sub">Active members share the bills. Inactive members are left out.</p>${act.map(([r, i]) => `<label>${esc(r[0])}</label><div class="flex"><input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric"><select id="ma${i}"><option value="Yes" ${r[2] === 'Yes' ? 'selected' : ''}>Active</option><option value="No" ${r[2] === 'No' ? 'selected' : ''}>Inactive</option></select><button class="btn sm" style="flex:0 0 auto" onclick="svMem(${i})">Save</button></div>`).join('') || '<div class="empty">No members yet</div>'}</div>
+  <div class="card"><h3>Add a new member</h3><label>Full name</label><input id="nn"><label>4-digit PIN</label><input id="np" maxlength="4" inputmode="numeric"><button class="btn" onclick="addMem()">Add member</button></div>`);
+}
+const appr = (i, a) => mgrCall(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vMem(); }).catch(err);
+const svMem = i => mgrCall('member', {name: LM[i][0], pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Saved'); I = stamp(await run('init')); vMem(); }).catch(err);
+const addMem = () => mgrCall('member', {name: $('#nn').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = stamp(await run('init')); vMem(); }).catch(err);
+async function vBill() {
+  let l;
+  try { l = (await mgrCall('lists')).bills.slice(); } catch (e) { return err(e); }
+  while (l.length < 6) l.push(['', '']);
+  wrap(`<div class="card"><h2>Fixed Bills</h2><p class="sub">Shared equally among all active members. Examples: Maid, Wi-Fi, Electricity</p>${l.map((r, i) => `<label>Bill ${f(i + 1)}</label><div class="flex"><input id="bn${i}" placeholder="Bill name" value="${esc(r[0])}"><input id="ba${i}" type="number" inputmode="decimal" placeholder="Amount" value="${esc(r[1])}"></div>`).join('')}<button class="btn" onclick="svBill(${l.length})">Save bills</button></div>`);
+}
+const svBill = n => mgrCall('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
+async function vMess() {
+  let l;
+  try { l = await mgrCall('lists'); } catch (e) { return err(e); }
+  const c = l.cfg, k = l.rules;
+  wrap(`<div class="card"><h2>Mess Settings</h2><div class="tiles"><div class="tile"><span>Start date</span><b style="font-size:16px">${c.Start ? fmt(c.Start) : 'Not started'}</b></div><div class="tile"><span>End date</span><b style="font-size:16px">${c.End ? fmt(c.End) : 'Running'}</b></div></div>
+  <label>Start the mess on</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">Start mess</button>
+  <label>Close the mess on<div class="hint">Close the mess on salary day</div></label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="mm('close','mend')">Close mess</button></div>
+  <div class="card"><h3>Meal-off deadline</h3><p class="sub">Today's lunch and dinner cannot be stopped after these times. Food is wasted once cooking is done, so please set the times.</p>
+  <div class="flex"><div><label>Last time to stop today's lunch</label><input type="time" id="cl" value="${k.lunch}"></div><div><label>Last time to stop today's dinner</label><input type="time" id="cd" value="${k.dinner}"></div></div>
+  <button class="btn" onclick="svCuts()">Save times</button></div>
+  <div class="card"><h3>Start a new month</h3><p class="sub">Saves this month in a backup file and clears all entries for the new month. Close the mess first.</p><button class="btn sec" onclick="nm()">Start a new month</button><button class="btn sec" onclick="mgrCall('sheets').then(()=>toast('Report sheets updated')).catch(err)">Update report sheets</button></div>
+  <div class="card"><h3>Change manager PIN</h3><input id="mpin" maxlength="4" inputmode="numeric" placeholder="New 4-digit PIN"><button class="btn" onclick="cp()">Save PIN</button></div>`);
+}
+const mm = (a, id) => mgrCall(a, {date: $('#' + id).value}).then(() => { toast('Done'); vMess(); }).catch(err);
+const svCuts = () => mgrCall('cuts', {lunch: $('#cl').value, dinner: $('#cd').value}).then(async () => { toast('Deadline saved'); I = stamp(await run('init')); vMess(); }).catch(err);
+const cp = () => mgrCall('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
+const nm = () => confirm('This saves the current month to a backup file and clears all entries. Continue?') && mgrCall('newMonth').then(() => { toast('New month started. The backup is saved in your Google Drive.'); vMess(); }).catch(err);
+async function vEnt() {
+  let e;
+  try { e = (await mgrCall('lists')).ent; } catch (x) { return err(x); }
+  const T = {MealOff: 'Meal Off', Guests: 'Guest Meal', Bazar: 'Bazar', Deposits: 'Deposit'};
+  const cell = v => /^\d{4}-\d{2}-\d{2}$/.test(v) ? fmt(v) : v === 'L' ? SH.L : v === 'D' ? SH.D : esc(v);
+  wrap(Object.keys(e).map(k => `<div class="card"><h3>${T[k]}</h3>${e[k].length ? `<table>${e[k].map(r => `<tr><td>${r.slice(2).filter(v => v !== '').map(cell).join(' · ')}</td><td><button class="btn sm red" onclick="del('${k}','${r[0]}')">Delete</button></td></tr>`).join('')}</table>` : '<div class="empty">No entries</div>'}</div>`).join(''));
+}
+const del = (s, id) => confirm('Delete this entry?') && mgrCall('del', {sheet: s, id: id}).then(() => { toast('Deleted'); vEnt(); }).catch(err);
+
 let ME = {duties: []}, DIS = {}, pollT, lastPend = null, lastSt = null, MIDS = [], RQ = {reqs: [], signups: []};
 const seenKey = () => 'mess_seen_' + U;
 const getSeen = () => { try { return JSON.parse(localStorage.getItem(seenKey()) || '[]'); } catch (e) { return []; } };
 const addSeen = ids => { try { localStorage.setItem(seenKey(), JSON.stringify(getSeen().concat(ids).slice(-100))); } catch (e) {} };
 const dayGap = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
 const stMap = m => { const o = {}; (m.mine || []).forEach(r => o[r[0]] = r[8]); return o; };
-const reqText = r => r[3] === 'pay' ? 'আপনার ' + tk(r[4]) + ' পেমেন্টের অনুরোধ' : 'আপনার সময় চাওয়ার অনুরোধ';
+const reqText = r => r[3] === 'pay' ? 'Your ' + tk(r[4]) + ' payment request' : 'Your grace period request';
 
 function afterLogin() {
-  lastPend = ROLE === 'M' ? ME.pending : null; lastSt = ROLE === 'U' ? stMap(ME) : null;
-  setBell(); renderAlerts(); showModal(); startPoll();
+  lastPend = ROLE === 'M' ? ME.pending : null;
+  lastSt = ROLE === 'U' ? stMap(ME) : null;
+  setBell();
+  renderAlerts();
+  showModal();
+  startPoll();
 }
 function setBell() {
   if (ROLE !== 'M') return;
   const n = ME.pending || 0;
-  $('#bell').style.display = ''; $('#bc').textContent = bn(n); $('#bc').style.display = n ? '' : 'none';
-  const t = $('#t_req'); if (t) t.textContent = 'অনুরোধ' + (n ? ' (' + bn(n) + ')' : '');
-  document.title = (n ? '(' + bn(n) + ') ' : '') + 'মেস ম্যানেজার';
+  $('#bell').style.display = '';
+  $('#bc').textContent = f(n);
+  $('#bc').style.display = n ? '' : 'none';
+  const t = $('#t_req');
+  if (t) t.textContent = 'Requests' + (n ? ' (' + f(n) + ')' : '');
+  document.title = (n ? '(' + f(n) + ') ' : '') + 'Mess Manager';
 }
 const newIds = (a, b) => { const old = (a || []).map(x => x[0]); return (b || []).some(x => old.indexOf(x[0]) < 0); };
 function startPoll() {
@@ -359,358 +494,225 @@ function startPoll() {
     if (document.hidden) return;
     try {
       const m = await runQ('me', U, P);
-      if (ROLE === 'M') { if (lastPend !== null && m.pending > lastPend) toast('🔔 নতুন অনুরোধ এসেছে'); lastPend = m.pending; }
-      else {
-        const s = stMap(m); Object.keys(s).forEach(id => { if (lastSt && lastSt[id] === 'Pending' && s[id] !== 'Pending') toast(s[id] === 'Approved' ? 'আপনার অনুরোধ অনুমোদিত হয়েছে' : 'আপনার অনুরোধ বাতিল হয়েছে'); }); lastSt = s;
-        if (newIds(ME.adv, m.adv)) toast('💰 ম্যানেজার অগ্রিম টাকা চেয়েছেন');
-        else if (newIds(ME.mo, m.mo)) toast('🔕 মেস বন্ধের নতুন ঘোষণা এসেছে');
-        else if (newIds(ME.nt, m.nt)) toast('📢 ম্যানেজারের নতুন বার্তা এসেছে');
+      if (ROLE === 'M') {
+        if (lastPend !== null && m.pending > lastPend) toast('🔔 New request received');
+        lastPend = m.pending;
+      } else {
+        const s = stMap(m);
+        Object.keys(s).forEach(id => {
+          if (lastSt && lastSt[id] === 'Pending' && s[id] !== 'Pending') {
+            toast(s[id] === 'Approved' ? 'Your request was approved' : 'Your request was rejected');
+          }
+        });
+        lastSt = s;
+        if (newIds(ME.adv, m.adv)) toast('💰 The manager asked for an advance payment');
+        else if (newIds(ME.mo, m.mo)) toast('🔕 New mess closure announced');
+        else if (newIds(ME.nt, m.nt)) toast('📢 New message from the manager');
       }
-      ME = m; VC['me' + JSON.stringify([U, P])] = m; setBell(); renderAlerts();
+      ME = m;
+      VC['me' + JSON.stringify([U, P])] = m;
+      setBell();
+      renderAlerts();
     } catch (e) {}
   }, 45000);
 }
 const moTxt = m => {
   const d1 = fmt(m[1]), d2 = fmt(m[3]);
-  const per = m[1] === m[3] ? (m[2] === m[4] ? d1 + ' (' + SH[m[2]] + ')' : d1 + ' (সারাদিন)') : d1 + ' (' + SH[m[2]] + ') থেকে ' + d2 + ' (' + SH[m[4]] + ') পর্যন্ত';
-  return per + (m[5] ? '। কারণ: ' + m[5] : '');
+  const per = m[1] === m[3]
+    ? (m[2] === m[4] ? d1 + ' (' + SH[m[2]] + ')' : d1 + ' (all day)')
+    : d1 + ' (' + SH[m[2]] + ') to ' + d2 + ' (' + SH[m[4]] + ')';
+  return per + (m[5] ? '. Reason: ' + m[5] : '');
 };
 function notices() {
   const n = [], t = ME.today || I.today;
   if (ROLE !== 'U') return n;
-  if (ME.blocked) n.push({k: 'blk', lvl: 'red', act: "go('pay')", txt: `আপনার অ্যাকাউন্ট স্থগিত আছে। আপনার ${tk(ME.due)} বাকি আছে, তাই আপনার মিল বন্ধ। অনুগ্রহ করে টাকা পরিশোধ করে পেমেন্টের তথ্য পাঠান, অথবা ম্যানেজারের কাছে কয়েকদিন সময় চান।`});
-  else if (ME.due > 0 && ME.graceUntil) n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('pay')", txt: `সতর্কতা: অনুগ্রহ করে ${fmt(ME.graceUntil)}-এর মধ্যে ${tk(ME.due)} পরিশোধ করুন। এরপর আপনার অ্যাকাউন্ট স্থগিত হয়ে যাবে।`});
-  (ME.mo || []).forEach(m => n.push({k: 'mo' + m[0], lvl: m[1] <= t ? 'red' : 'warn', once: 1, dis: 1, txt: (m[1] <= t ? '🔕 মেস এখন বন্ধ আছে: ' : '🔕 মেস বন্ধ থাকবে: ') + moTxt(m) + '। এই সময়ের মিল হিসাবে ধরা হবে না।'}));
-  (ME.nt || []).forEach(x => n.push({k: 'nt' + x[0], lvl: 'info', once: 1, dis: 1, modal: true, txt: '📢 ম্যানেজারের বার্তা: ' + x[1]}));
+  if (ME.blocked) n.push({k: 'blk', lvl: 'red', act: "go('pay')", txt: `Your account is frozen. You have ${tk(ME.due)} unpaid dues, so your meals are off. Please pay and send the payment details, or ask the manager for a few days.`});
+  else if (ME.due > 0 && ME.graceUntil) n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('pay')", txt: `Warning: please pay ${tk(ME.due)} by ${fmt(ME.graceUntil)}. After that your account will be frozen.`});
+  (ME.mo || []).forEach(m => n.push({k: 'mo' + m[0], lvl: m[1] <= t ? 'red' : 'warn', once: 1, dis: 1, txt: (m[1] <= t ? '🔕 The mess is closed now: ' : '🔕 The mess will be closed: ') + moTxt(m) + '. Meals in this period are not counted.'}));
+  (ME.nt || []).forEach(x => n.push({k: 'nt' + x[0], lvl: 'info', once: 1, dis: 1, modal: true, txt: '📢 Message from the manager: ' + x[1]}));
   (ME.adv || []).forEach(a => {
     const g = dayGap(t, a[2]);
-    n.push({k: 'adv' + a[0], lvl: g <= 1 ? 'red' : 'warn', act: `payAdv('${a[0]}')`, txt: (g < 0 ? `আপনার ${tk(a[1])} অগ্রিম দেওয়ার শেষ তারিখ ছিল ${fmt(a[2])}।` : `ম্যানেজার ${fmt(a[2])}-এর মধ্যে আপনার কাছে ${tk(a[1])} অগ্রিম চেয়েছেন।`) + (a[3] ? ' নোট: ' + a[3] : '')});
+    n.push({k: 'adv' + a[0], lvl: g <= 1 ? 'red' : 'warn', act: `payAdv('${a[0]}')`, txt: (g < 0 ? `The last date to pay your ${tk(a[1])} advance was ${fmt(a[2])}.` : `The manager asked you for ${tk(a[1])} in advance by ${fmt(a[2])}.`) + (a[3] ? ' Note: ' + a[3] : '')});
   });
   (ME.duties || []).filter(d => d[1] === U).forEach(d => {
-    const a = dayGap(t, d[2]), range = fmt(d[2]) + ' থেকে ' + fmt(d[3]) + ' পর্যন্ত'; let lvl = 'info', txt = `আপনার বাজারের পরবর্তী পালা: ${range}।`;
-    if (a < 0) { lvl = 'red'; txt = `আপনার বাজারের পালা এখন চলছে (${range})। অনুগ্রহ করে বাজার করুন।`; }
-    else if (a === 0) { lvl = 'red'; txt = `আজ থেকে আপনার বাজারের পালা শুরু (${range})।`; }
-    else if (a === 1) { lvl = 'red'; txt = `আগামীকাল থেকে আপনার বাজারের পালা শুরু (${range})।`; }
-    else if (a === 2) { lvl = 'warn'; txt = `আর ২ দিন পর আপনার বাজারের পালা শুরু (${range})।`; }
+    const a = dayGap(t, d[2]), range = fmt(d[2]) + ' to ' + fmt(d[3]);
+    let lvl = 'info', txt = `Your next bazar duty: ${range}.`;
+    if (a < 0) { lvl = 'red'; txt = `Your bazar duty is running now (${range}). Please do the bazar.`; }
+    else if (a === 0) { lvl = 'red'; txt = `Your bazar duty starts today (${range}).`; }
+    else if (a === 1) { lvl = 'red'; txt = `Your bazar duty starts tomorrow (${range}).`; }
+    else if (a === 2) { lvl = 'warn'; txt = `Your bazar duty starts in 2 days (${range}).`; }
     n.push({k: 'duty' + d[0], lvl: lvl, txt: txt, dis: 1});
   });
-  // বাজারের পালা চলাকালীন কতবার বাজার করেছেন (সবুজ)
-  (ME.bz || []).forEach(b => n.push({k: 'bz' + b[0] + '_' + b[1], lvl: b[1] ? 'ok' : 'info', dis: 1, modal: false, txt: b[1] ? `আপনার বাজারের পালায় (${fmt(b[3])} থেকে ${fmt(b[4])} পর্যন্ত) আপনি এখন পর্যন্ত ${bn(b[1])} বার বাজার করেছেন, মোট ${tk(b[2])}।` : `আপনার বাজারের পালা চলছে (${fmt(b[3])} থেকে ${fmt(b[4])} পর্যন্ত)। এখনো কোনো বাজার লেখা হয়নি।`}));
+  (ME.bz || []).forEach(b => n.push({k: 'bz' + b[0] + '_' + b[1], lvl: b[1] ? 'ok' : 'info', dis: 1, modal: false, txt: b[1] ? `In your bazar duty (${fmt(b[3])} to ${fmt(b[4])}) you have done the bazar ${f(b[1])} times so far, total ${tk(b[2])}.` : `Your bazar duty is running (${fmt(b[3])} to ${fmt(b[4])}). No bazar has been recorded yet.`}));
   const o = {red: 0, warn: 1, ok: 2, info: 3};
   return n.sort((a, b) => o[a.lvl] - o[b.lvl]);
 }
 function renderAlerts() {
-  $('#al').innerHTML = notices().filter(x => !DIS[x.k]).map(x => `<div class="alert ${x.lvl}"><div>${esc(x.txt)}${x.act ? ` <a onclick="${x.act}">এখনই দিন</a>` : ''}</div>${x.dis ? `<button class="x" title="লুকান" onclick="dis('${x.k}')">×</button>` : ''}</div>`).join('');
+  $('#al').innerHTML = notices().filter(x => !DIS[x.k]).map(x => `<div class="alert ${x.lvl}"><div>${esc(x.txt)}${x.act ? ` <a onclick="${x.act}">Pay now</a>` : ''}</div>${x.dis ? `<button class="x" title="Hide" onclick="dis('${x.k}')">×</button>` : ''}</div>`).join('');
 }
 const dis = k => { DIS[k] = 1; renderAlerts(); };
 function showModal() {
-  const seen = getSeen(); MIDS = [];
+  const seen = getSeen();
+  MIDS = [];
   const items = notices().filter(x => (x.modal !== undefined ? x.modal : x.lvl !== 'info') && (!x.once || seen.indexOf(x.k) < 0)).map(x => { if (x.once) MIDS.push(x.k); return {lvl: x.lvl, txt: x.txt}; });
   let goReq = false;
   if (ROLE === 'U') {
     (ME.mine || []).filter(r => r[8] !== 'Pending' && seen.indexOf(r[0]) < 0).forEach(r => {
-      MIDS.push(r[0]); const ok = r[8] === 'Approved';
-      items.push({lvl: ok ? 'ok' : 'red', txt: reqText(r) + (ok ? ' অনুমোদিত হয়েছে।' + (r[9] ? ' ' + r[9] + '।' : '') : ' অনুমোদিত হয়নি।')});
+      MIDS.push(r[0]);
+      const ok = r[8] === 'Approved';
+      items.push({lvl: ok ? 'ok' : 'red', txt: reqText(r) + (ok ? ' was approved.' + (r[9] ? ' ' + r[9] : '') : ' was not approved.')});
     });
-  } else if (ME.pending > 0) { items.push({lvl: 'warn', txt: `আপনার সিদ্ধান্তের অপেক্ষায় ${bn(ME.pending)}টি অনুরোধ আছে।`}); goReq = true; }
+  } else if (ME.pending > 0) {
+    items.push({lvl: 'warn', txt: `You have ${f(ME.pending)} requests waiting for your decision.`});
+    goReq = true;
+  }
   if (!items.length) return;
-  $('#mbox').innerHTML = `<h3>${ROLE === 'M' ? 'আপনার জন্য অপেক্ষা করছে' : 'গুরুত্বপূর্ণ বিজ্ঞপ্তি'}</h3>${items.map(x => `<div class="alert ${x.lvl}" style="margin:0 0 10px"><div>${esc(x.txt)}</div></div>`).join('')}<button class="btn" onclick="closeModal(${goReq})">${goReq ? 'অনুরোধগুলো দেখুন' : 'ঠিক আছে, বুঝেছি'}</button>`;
+  $('#mbox').innerHTML = `<h3>${ROLE === 'M' ? 'Waiting for you' : 'Important notices'}</h3>${items.map(x => `<div class="alert ${x.lvl}" style="margin:0 0 10px"><div>${esc(x.txt)}</div></div>`).join('')}<button class="btn" onclick="closeModal(${goReq})">${goReq ? 'View requests' : 'OK, got it'}</button>`;
   $('#modal').style.display = 'flex';
 }
 function closeModal(goReq) {
-  $('#modal').style.display = 'none'; if (MIDS.length) addSeen(MIDS); MIDS = [];
+  $('#modal').style.display = 'none';
+  if (MIDS.length) addSeen(MIDS);
+  MIDS = [];
   if (goReq) go('req');
 }
 
-// ---------- সদস্য: পেমেন্ট ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vPay() {
   try { ME = await rc('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
-  const advs = ME.adv || [], advCard = advs.length ? `<div class="card"><h3>অগ্রিমের অনুরোধ</h3><p class="sub">ম্যানেজার আপনার কাছে অগ্রিম টাকা চেয়েছেন।</p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>${fmt(a[2])}-এর মধ্যে দিন${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">এখনই দিন</button></div>`).join('')}</div>` : '';
-  wrap(`${advCard}<div class="card"><h2>পেমেন্ট পাঠান</h2><p class="sub">বাকি টাকা বা জমার টাকা দিয়েছেন? এখানে ম্যানেজারকে জানান। ম্যানেজার অনুমোদন করলে আপনার হিসাবে যোগ হবে।</p>
-  ${PRE ? '<div class="alert info" style="margin:0 0 6px">আপনি অগ্রিমের অনুরোধের টাকা দিচ্ছেন। অনুগ্রহ করে পরিমাণটি দেখে নিন।</div>' : ''}${ME.due > 0 ? `<div class="banner neg">আপনার বাকি<b>${tk(ME.due)}</b></div>` : ''}
-  <label>টাকার পরিমাণ (৳)<div class="hint">যেমন: ১০</div></label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ME.due > 0 ? ME.due : ''}">
-  <label>যে তারিখে দিয়েছেন</label><input id="pd" type="date" value="${ME.today}">
-  <label>কাকে দিয়েছেন</label><select id="pt"><option value="Manager">ম্যানেজার</option>${others.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-  <label>নোট (ঐচ্ছিক)<div class="hint">যেমন: বিকাশ, নগদ টাকা</div></label><input id="pn" value="${PRE ? esc(PRE.note) : ''}">
-  <button class="btn" onclick="payReview()">এগিয়ে যান</button></div>
-  ${ME.blocked ? `<div class="card"><h3>আরও সময় দরকার?</h3><p class="sub">আবার মিল চালু করতে ম্যানেজারের কাছে ১ বা ২ দিন সময় চাইতে পারেন।</p>${pendGrace ? '<span class="badge warn">আপনার অনুরোধ অপেক্ষায় আছে</span>' : '<button class="btn sec" onclick="askGrace()">সময় চেয়ে অনুরোধ পাঠান</button>'}</div>` : ''}
-  <div class="card"><h3>আমার অনুরোধগুলো</h3>${mine.length ? mine.map(r => `<div class="row" style="cursor:default"><div>${r[3] === 'pay' ? `পেমেন্ট ${tk(r[4])}<small>${r[6] === 'Manager' ? 'ম্যানেজারকে' : esc(r[6] || '-') + '-কে'} · ${fmt(r[5])}</small>` : 'সময় চাওয়ার অনুরোধ'}${r[9] ? `<small>${esc(r[9])}</small>` : ''}</div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('') : '<div class="empty">এখনো কোনো অনুরোধ নেই</div>'}</div>`);
+  const advs = ME.adv || [], advCard = advs.length ? `<div class="card"><h3>Advance requests</h3><p class="sub">The manager asked you to pay in advance.</p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Pay by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay now</button></div>`).join('')}</div>` : '';
+  wrap(`${advCard}<div class="card"><h2>Send Payment</h2><p class="sub">Paid your dues or given money? Tell the manager here. Your account is updated after the manager approves.</p>
+  ${PRE ? '<div class="alert info" style="margin:0 0 6px">You are paying an advance request. Please check the amount.</div>' : ''}${ME.due > 0 ? `<div class="banner neg">Your unpaid dues<b>${tk(ME.due)}</b></div>` : ''}
+  <label>Amount (৳)<div class="hint">e.g. 10</div></label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ME.due > 0 ? ME.due : ''}">
+  <label>Date you paid</label><input id="pd" type="date" value="${ME.today}">
+  <label>Paid to</label><select id="pt"><option value="Manager">Manager</option>${others.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <label>Note (optional)<div class="hint">e.g. bKash, cash</div></label><input id="pn" value="${PRE ? esc(PRE.note) : ''}">
+  <button class="btn" onclick="payReview()">Continue</button></div>
+  ${ME.blocked ? `<div class="card"><h3>Need more time?</h3><p class="sub">You can ask the manager for 1 or 2 days to turn your meals on again.</p>${pendGrace ? '<span class="badge warn">Your request is waiting</span>' : '<button class="btn sec" onclick="askGrace()">Request more time</button>'}</div>` : ''}
+  <div class="card"><h3>My requests</h3>${mine.length ? mine.map(r => `<div class="row" style="cursor:default"><div>${r[3] === 'pay' ? `Payment ${tk(r[4])}<small>${r[6] === 'Manager' ? 'To Manager' : 'To ' + esc(r[6] || '-')} · ${fmt(r[5])}</small>` : 'Grace request'}${r[9] ? `<small>${esc(r[9])}</small>` : ''}</div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('') : '<div class="empty">No requests yet</div>'}</div>`);
 }
 function payReview() {
   const d = {amount: $('#pa').value, date: $('#pd').value, paidTo: $('#pt').value, note: $('#pn').value.trim(), ref: PRE ? PRE.ref : ''};
-  if (!(Number(d.amount) > 0) || !d.date) return toast('অনুগ্রহ করে টাকার পরিমাণ ও তারিখ দিন', 1);
-  wrap(`<div class="card"><h3>অনুগ্রহ করে তথ্যগুলো দেখে নিন</h3><table><tr><td>টাকার পরিমাণ</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>তারিখ</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>কাকে দিয়েছেন</td><td><b>${d.paidTo === 'Manager' ? 'ম্যানেজার' : esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>নোট</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
-  <button class="btn" id="pc">নিশ্চিত করে ম্যানেজারকে পাঠান</button><button class="btn sec" onclick="vPay()">সম্পাদনা</button></div>`);
-  $('#pc').onclick = () => run('request', U, P, 'pay', d).then(() => { PRE = null; toast('অনুরোধ ম্যানেজারের কাছে পাঠানো হয়েছে'); vPay(); }).catch(err);
+  if (!(Number(d.amount) > 0) || !d.date) return toast('Please enter the amount and date', 1);
+  wrap(`<div class="card"><h3>Please check your details</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Paid to</td><td><b>${d.paidTo === 'Manager' ? 'Manager' : esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
+  <button class="btn" id="pc">Confirm and send to manager</button><button class="btn sec" onclick="vPay()">Edit</button></div>`);
+  $('#pc').onclick = () => run('request', U, P, 'pay', d).then(() => { PRE = null; toast('Request sent to the manager'); vPay(); }).catch(err);
 }
-const askGrace = () => run('request', U, P, 'grace', {}).then(() => { toast('অনুরোধ ম্যানেজারের কাছে পাঠানো হয়েছে'); vPay(); }).catch(err);
+const askGrace = () => run('request', U, P, 'grace', {}).then(() => { toast('Request sent to the manager'); vPay(); }).catch(err);
 
-// ---------- ম্যানেজার: অনুরোধ ----------
 async function vReq() {
-  try { RQ = await M('reqs'); } catch (e) { return err(e); }
+  let l;
+  try { RQ = await mgrCall('reqs'); } catch (e) { return err(e); }
   const pend = RQ.reqs.filter(x => x[8] === 'Pending'), done = RQ.reqs.filter(x => x[8] !== 'Pending').slice(0, 15);
-  ME.pending = pend.length + RQ.signups.length; lastPend = ME.pending; setBell();
+  ME.pending = pend.length + RQ.signups.length;
+  lastPend = ME.pending;
+  setBell();
   const none = !pend.length && !RQ.signups.length;
-  wrap(`<div class="card"><h2>অনুরোধসমূহ</h2><p class="sub">সদস্যদের পাঠানো অনুরোধ অনুমোদন বা বাতিল করুন।</p>${none ? '<div class="empty">কোনো অপেক্ষমাণ অনুরোধ নেই 🎉</div>' : ''}</div>
-  ${RQ.signups.length ? `<div class="card"><h3>নতুন সদস্য (${bn(RQ.signups.length)})</h3>${RQ.signups.map((n, i) => `<div class="row" style="cursor:default"><div><b>${esc(n)}</b><small>মেসে যোগ দিতে চান</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="rqSign(${i},'approve')">অনুমোদন</button><button class="btn sm red" onclick="rqSign(${i},'reject')">বাতিল</button></div></div>`).join('')}</div>` : ''}
-  ${pend.map(r => r[3] === 'pay' ? `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">💰 ${esc(r[2])}-এর পেমেন্ট</h3><span class="badge warn" style="flex:0 0 auto">অপেক্ষায়</span></div>
-    <table style="margin-top:8px"><tr><td>তিনি জানিয়েছেন</td><td><b>${tk(r[4])}</b></td></tr><tr><td>যাকে দিয়েছেন</td><td>${r[6] === 'Manager' ? 'ম্যানেজার' : esc(r[6] || '-')}</td></tr><tr><td>তারিখ</td><td>${fmt(r[5])}</td></tr>${r[7] ? `<tr><td>নোট</td><td>${esc(r[7])}</td></tr>` : ''}<tr><td>পাঠানো হয়েছে</td><td>${bn(esc(r[1]))}</td></tr></table>
-    <label>যে টাকা জমা হবে (৳)<div class="hint">সদস্য ভিন্ন পরিমাণ পাঠালে আপনি এটি বদলাতে পারবেন।</div></label><input id="ra_${r[0]}" type="number" inputmode="decimal" value="${esc(r[4])}">
-    <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqPay('${r[0]}',true)">অনুমোদন</button><button class="btn red" style="margin:0" onclick="rqPay('${r[0]}',false)">বাতিল</button></div></div>`
-  : `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">⏳ ${esc(r[2])}-এর সময় চাওয়ার অনুরোধ</h3><span class="badge warn" style="flex:0 0 auto">অপেক্ষায়</span></div>
-    <p class="sub" style="margin-top:6px">বাকি টাকার কারণে এই সদস্য স্থগিত আছেন এবং আরও কয়েকদিন মিল চালু রাখতে চান। অনুরোধ পাঠানো হয়েছে: ${bn(esc(r[1]))}।</p>
-    <div class="flex"><button class="btn" style="margin:0" onclick="rqGrace('${r[0]}',1)">১ দিন সময় দিন</button><button class="btn" style="margin:0" onclick="rqGrace('${r[0]}',2)">২ দিন সময় দিন</button></div>
-    <button class="btn red" onclick="rqGrace('${r[0]}',0)">বাতিল করুন</button></div>`).join('')}
-  ${done.length ? `<div class="card"><h3>সাম্প্রতিক সিদ্ধান্ত</h3>${done.map(r => `<div class="row" style="cursor:default"><div>${esc(r[2])} · ${r[3] === 'pay' ? 'পেমেন্ট ' + tk(r[4]) : 'সময় চাওয়া'}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
+  wrap(`<div class="card"><h2>Requests</h2><p class="sub">Approve or reject what members send you.</p>${none ? '<div class="empty">No pending requests 🎉</div>' : ''}</div>
+  ${RQ.signups.length ? `<div class="card"><h3>New members (${f(RQ.signups.length)})</h3>${RQ.signups.map((n, i) => `<div class="row" style="cursor:default"><div><b>${esc(n)}</b><small>Wants to join the mess</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="rqSign(${i},'approve')">Approve</button><button class="btn sm red" onclick="rqSign(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
+  ${pend.map(r => r[3] === 'pay' ? `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">💰 Payment from ${esc(r[2])}</h3><span class="badge warn" style="flex:0 0 auto">Pending</span></div>
+    <table style="margin-top:8px"><tr><td>Says they paid</td><td><b>${tk(r[4])}</b></td></tr><tr><td>Paid to</td><td>${r[6] === 'Manager' ? 'Manager' : esc(r[6] || '-')}</td></tr><tr><td>Date</td><td>${fmt(r[5])}</td></tr>${r[7] ? `<tr><td>Note</td><td>${esc(r[7])}</td></tr>` : ''}<tr><td>Sent</td><td>${esc(r[1])}</td></tr></table>
+    <label>Amount to record (৳)<div class="hint">You can change it if the member sent a different amount.</div></label><input id="ra_${r[0]}" type="number" inputmode="decimal" value="${esc(r[4])}">
+    <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqPay('${r[0]}',true)">Approve</button><button class="btn red" style="margin:0" onclick="rqPay('${r[0]}',false)">Reject</button></div></div>`
+  : `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">⏳ Grace request from ${esc(r[2])}</h3><span class="badge warn" style="flex:0 0 auto">Pending</span></div>
+    <p class="sub" style="margin-top:6px">This member is frozen because of unpaid dues and wants to use meals for a few more days. Sent: ${esc(r[1])}.</p>
+    <div class="flex"><button class="btn" style="margin:0" onclick="rqGrace('${r[0]}',1)">Allow 1 day</button><button class="btn" style="margin:0" onclick="rqGrace('${r[0]}',2)">Allow 2 days</button></div>
+    <button class="btn red" onclick="rqGrace('${r[0]}',0)">Cancel</button></div>`).join('')}
+  ${done.length ? `<div class="card"><h3>Recent decisions</h3>${done.map(r => `<div class="row" style="cursor:default"><div>${esc(r[2])} · ${r[3] === 'pay' ? 'Payment ' + tk(r[4]) : 'Grace request'}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
 }
-const rqSign = (i, a) => M(a, {name: RQ.signups[i]}).then(async () => { toast(a === 'approve' ? 'সদস্যকে অনুমোদন করা হয়েছে' : 'অনুরোধ বাতিল করা হয়েছে'); I = stamp(await run('init')); vReq(); }).catch(err);
-const rqPay = (id, ok) => { if (!ok && !confirm('এই পেমেন্টের অনুরোধ বাতিল করবেন?')) return; M('decide', {id: id, ok: ok, amount: ok ? $('#ra_' + id).value : 0}).then(() => { toast(ok ? 'পেমেন্ট অনুমোদিত হয়েছে এবং হিসাবে যোগ হয়েছে' : 'অনুরোধ বাতিল করা হয়েছে'); vReq(); }).catch(err); };
-const rqGrace = (id, n) => { if (!n && !confirm('এই অনুরোধটি বাতিল করবেন?')) return; M('decide', {id: id, ok: n > 0, days: n}).then(() => { toast(n ? bn(n) + ' দিনের সময় দেওয়া হয়েছে' : 'অনুরোধ বাতিল করা হয়েছে'); vReq(); }).catch(err); };
+const rqSign = (i, a) => mgrCall(a, {name: RQ.signups[i]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vReq(); }).catch(err);
+const rqPay = (id, ok) => { if (!ok && !confirm('Reject this payment request?')) return; mgrCall('decide', {id: id, ok: ok, amount: ok ? $('#ra_' + id).value : 0}).then(() => { toast(ok ? 'Payment approved and added to account' : 'Request rejected'); vReq(); }).catch(err); };
+const rqGrace = (id, n) => { if (!n && !confirm('Reject this request?')) return; mgrCall('decide', {id: id, ok: n > 0, days: n}).then(() => { toast(n ? `Grace period approved for ${n} days` : 'Request rejected'); vReq(); }).catch(err); };
 
-// ---------- বাজারের পালা ----------
 async function vDuty() {
   try { ME = await rc('me', U, P); } catch (e) { return err(e); }
   renderAlerts();
   const t = ME.today, l = ME.duties || [];
-  const bd = d => { const a = dayGap(t, d[2]); return a < 0 ? ['pos', 'চলছে'] : a === 0 ? ['neg', 'আজ শুরু'] : a === 1 ? ['neg', 'আগামীকাল'] : a === 2 ? ['warn', '২ দিন পর'] : ['gray', bn(a) + ' দিন পর']; };
-  wrap(`${ROLE === 'M' ? `<div class="card"><h3>বাজারের পালা ঠিক করুন</h3><p class="sub">কে কোন তারিখে বাজার করবেন ঠিক করে দিন। পালা কাছে এলে সদস্য নোটিফিকেশন পাবেন।</p>
-  <label>সদস্য</label><select id="dm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-  <div class="flex"><div><label>শুরুর তারিখ</label><input type="date" id="df" value="${t}"></div><div><label>শেষ তারিখ</label><input type="date" id="dt" value="${t}"></div></div>
-  <button class="btn" onclick="dutyAdd()">তালিকায় যোগ করুন</button></div>` : ''}
-  <div class="card"><h2>বাজারের পালার তালিকা</h2><p class="sub">কে কবে বাজার করবেন।</p>${l.length ? l.map(d => { const b = bd(d), me = d[1] === U; return `<div class="row" style="cursor:default${me ? ';background:#f0fdfa;border-radius:10px' : ''}"><div><b>${esc(d[1])}${me ? ' (আপনি)' : ''}</b><small>${fmt(d[2])} থেকে ${fmt(d[3])} পর্যন্ত</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${b[0]}">${b[1]}</span>${ROLE === 'M' ? `<button class="btn sm red" onclick="dutyDel('${d[0]}')">সরান</button>` : ''}</div></div>`; }).join('') : '<div class="empty">কোনো পালা ঠিক করা নেই</div>'}</div>`);
+  const bd = d => { const a = dayGap(t, d[2]); return a < 0 ? ['pos', 'Running now'] : a === 0 ? ['neg', 'Starts today'] : a === 1 ? ['neg', 'Tomorrow'] : a === 2 ? ['warn', 'In 2 days'] : ['gray', `In ${f(a)} days`]; };
+  wrap(`${ROLE === 'M' ? `<div class="card"><h3>Assign bazar duty</h3><p class="sub">Choose who will do the bazar and on which dates. The member gets a notification when the duty is near.</p>
+  <label>Member</label><select id="dm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+  <div class="flex"><div><label>Start date</label><input type="date" id="df" value="${t}"></div><div><label>End date</label><input type="date" id="dt" value="${t}"></div></div>
+  <button class="btn" onclick="dutyAdd()">Add to schedule</button></div>` : ''}
+  <div class="card"><h2>Bazar duty schedule</h2><p class="sub">Who does the bazar and when.</p>${l.length ? l.map(d => { const b = bd(d), me = d[1] === U; return `<div class="row" style="cursor:default${me ? ';background:#f0fdfa;border-radius:10px' : ''}"><div><b>${esc(d[1])}${me ? ' (you)' : ''}</b><small>${fmt(d[2])} to ${fmt(d[3])}</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${b[0]}">${b[1]}</span>${ROLE === 'M' ? `<button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button>` : ''}</div></div>`; }).join('') : '<div class="empty">No bazar duty planned</div>'}</div>`);
 }
-const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('অনুগ্রহ করে সঠিক তারিখ দিন', 1); M('dutyAdd', d).then(() => { toast('তালিকায় যোগ হয়েছে'); vDuty(); }).catch(err); };
-const dutyDel = id => confirm('এই পালাটি সরাবেন?') && M('dutyDel', {id: id}).then(() => { toast('সরানো হয়েছে'); vDuty(); }).catch(err);
+const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('Please enter valid dates', 1); mgrCall('dutyAdd', d).then(() => { toast('Added to schedule'); vDuty(); }).catch(err); };
+const dutyDel = id => confirm('Remove this duty?') && mgrCall('dutyDel', {id: id}).then(() => { toast('Removed'); vDuty(); }).catch(err);
 
-// ---------- অগ্রিম অনুরোধ ----------
 let PRE = null;
 const addD = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 function payAdv(id) {
-  const a = (ME.adv || []).find(x => x[0] === id); if (!a) return toast('এই অনুরোধটি আর খোলা নেই', 1);
-  PRE = {amount: a[1], ref: id, note: 'অগ্রিম'}; go('pay');
+  const a = (ME.adv || []).find(x => x[0] === id);
+  if (!a) return toast('This request is no longer open', 1);
+  PRE = {amount: a[1], ref: id, note: 'Advance'};
+  go('pay');
 }
 async function vAdv() {
-  let l; try { l = await M('adv'); } catch (e) { return err(e); }
+  let l;
+  try { l = await mgrCall('adv'); } catch (e) { return err(e); }
   const t = ME.today || I.today, open = l.filter(r => r[6] === 'Open'), paid = l.filter(r => r[6] === 'Paid').slice(0, 10);
-  wrap(`<div class="card"><h2>অগ্রিম টাকার অনুরোধ</h2><p class="sub">সদস্যদের কাছে আগাম টাকা চান। তারা লগইন করলেই বিজ্ঞপ্তি দেখবেন এবং পেমেন্ট ট্যাব থেকে টাকা পাঠাতে পারবেন।</p>
-  <label>সদস্য</label>
-  <label class="chk"><input type="checkbox" checked onchange="document.querySelectorAll('.am').forEach(c => c.checked = this.checked)"> <b>সবাইকে বেছে নিন</b></label>
-  ${I.names.map(n => `<label class="chk"><input type="checkbox" class="am" value="${esc(n)}" checked> ${esc(n)}</label>`).join('') || '<div class="empty">কোনো সক্রিয় সদস্য নেই</div>'}
-  <label>প্রত্যেক সদস্যের টাকা (৳)<div class="hint">যেমন: ২০০০</div></label><input id="aa" type="number" inputmode="decimal" min="0">
-  <label>টাকা দেওয়ার শেষ তারিখ</label><input id="ad" type="date" value="${addD(t, 7)}">
-  <label>নোট (ঐচ্ছিক)<div class="hint">যেমন: ডিসেম্বরের বাজারের অগ্রিম</div></label><input id="an">
-  <button class="btn" onclick="advReview()">এগিয়ে যান</button></div>
-  <div class="card"><h3>টাকার অপেক্ষায় (${bn(open.length)})</h3>${open.length ? `<p class="sub">মোট চাওয়া হয়েছে: ${tk(open.reduce((a, r) => a + Number(r[3]), 0))}</p>` + open.map(r => { const od = r[4] < t; return `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · ${fmt(r[4])}-এর মধ্যে${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${od ? 'neg' : 'warn'}">${od ? 'দেরি হয়েছে' : 'অপেক্ষায়'}</span><button class="btn sm sec" onclick="advAct('advDone','${r[0]}')">পরিশোধিত</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">বাতিল</button></div></div>`; }).join('') : '<div class="empty">কোনো অপেক্ষমাণ অগ্রিম অনুরোধ নেই</div>'}</div>
-  ${paid.length ? `<div class="card"><h3>সম্প্রতি পরিশোধ হয়েছে</h3>${paid.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b><small>${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><span class="badge pos">পরিশোধিত</span></div>`).join('')}</div>` : ''}`);
+  wrap(`<div class="card"><h2>Advance Request</h2><p class="sub">Ask members to pay money in advance. They see a notice when they log in and can send the payment from the Payments tab.</p>
+  <label>Members</label>
+  <label class="chk"><input type="checkbox" checked onchange="document.querySelectorAll('.am').forEach(c => c.checked = this.checked)"> <b>Select all</b></label>
+  ${I.names.map(n => `<label class="chk"><input type="checkbox" class="am" value="${esc(n)}" checked> ${esc(n)}</label>`).join('') || '<div class="empty">No active members</div>'}
+  <label>Amount for each member (৳)<div class="hint">e.g. 2000</div></label><input id="aa" type="number" inputmode="decimal" min="0">
+  <label>Last date to pay</label><input id="ad" type="date" value="${addD(t, 7)}">
+  <label>Note (optional)<div class="hint">e.g. Advance for December bazar</div></label><input id="an">
+  <button class="btn" onclick="advReview()">Continue</button></div>
+  <div class="card"><h3>Waiting for payment (${f(open.length)})</h3>${open.length ? `<p class="sub">Total asked: ${tk(open.reduce((a, r) => a + Number(r[3]), 0))}</p>` + open.map(r => { const od = r[4] < t; return `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · by ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div class="flex" style="flex:0 0 auto"><span class="badge ${od ? 'neg' : 'warn'}">${od ? 'Overdue' : 'Pending'}</span><button class="btn sm sec" onclick="advAct('advDone','${r[0]}')">Paid</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">Cancel</button></div></div>`; }).join('') : '<div class="empty">No pending advance requests</div>'}</div>
+  ${paid.length ? `<div class="card"><h3>Recently paid</h3>${paid.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b><small>${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><span class="badge pos">Paid</span></div>`).join('')}</div>` : ''}`);
 }
 function advReview() {
   const names = Array.from(document.querySelectorAll('.am')).filter(c => c.checked).map(c => c.value);
   const d = {members: names, amount: $('#aa').value, due: $('#ad').value, note: $('#an').value.trim()};
-  if (!names.length) return toast('অনুগ্রহ করে কমপক্ষে একজন সদস্য বেছে নিন', 1);
-  if (!(Number(d.amount) > 0) || !d.due) return toast('অনুগ্রহ করে টাকার পরিমাণ ও শেষ তারিখ দিন', 1);
-  wrap(`<div class="card"><h3>অনুগ্রহ করে তথ্যগুলো দেখে নিন</h3><table><tr><td>সদস্য (${bn(names.length)}জন)</td><td><b>${names.map(esc).join(', ')}</b></td></tr><tr><td>প্রত্যেকের টাকা</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>মোট</td><td><b>${tk(Number(d.amount) * names.length)}</b></td></tr><tr><td>শেষ তারিখ</td><td><b>${fmt(d.due)}</b></td></tr>${d.note ? `<tr><td>নোট</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
-  <button class="btn" id="advc">নিশ্চিত করে পাঠান</button><button class="btn sec" onclick="vAdv()">সম্পাদনা</button></div>`);
-  $('#advc').onclick = () => M('advAdd', d).then(n => { toast(bn(n) + ' জন সদস্যকে অনুরোধ পাঠানো হয়েছে'); vAdv(); }).catch(err);
+  if (!names.length) return toast('Please select at least one member', 1);
+  if (!(Number(d.amount) > 0) || !d.due) return toast('Please enter the amount and last date', 1);
+  wrap(`<div class="card"><h3>Please check your details</h3><table><tr><td>Members (${f(names.length)})</td><td><b>${names.map(esc).join(', ')}</b></td></tr><tr><td>Amount each</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Total</td><td><b>${tk(Number(d.amount) * names.length)}</b></td></tr><tr><td>Last date</td><td><b>${fmt(d.due)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
+  <button class="btn" id="advc">Confirm and send</button><button class="btn sec" onclick="vAdv()">Edit</button></div>`);
+  $('#advc').onclick = () => mgrCall('advAdd', d).then(n => { toast(`Request sent to ${n} members`); vAdv(); }).catch(err);
 }
-const advAct = (a, id) => (a === 'advDone' || confirm('এই অনুরোধটি বাতিল করবেন?')) && M(a, {id: id}).then(() => { toast(a === 'advDone' ? 'পরিশোধিত হিসেবে চিহ্নিত হয়েছে' : 'অনুরোধ বাতিল হয়েছে'); vAdv(); }).catch(err);
+const advAct = (a, id) => (a === 'advDone' || confirm('Cancel this request?')) && mgrCall(a, {id: id}).then(() => { toast(a === 'advDone' ? 'Marked as paid' : 'Request cancelled'); vAdv(); }).catch(err);
 
-// ---------- ঘোষণা: সবাইকে বার্তা ও মেস বন্ধ রাখা ----------
 async function vAnn() {
-  let nt, mo; try { [nt, mo] = await Promise.all([M('nt'), M('mo')]); } catch (e) { return err(e); }
+  let nt, mo;
+  try { [nt, mo] = await Promise.all([mgrCall('nt'), mgrCall('mo')]); } catch (e) { return err(e); }
   const t = ME.today || I.today, act = nt.filter(r => r[3] >= t), up = mo.filter(r => r[4] >= t).sort((a, b) => a[2] < b[2] ? -1 : 1);
   const shSel = (id, v) => `<select id="${id}"><option value="L" ${v === 'L' ? 'selected' : ''}>${SH.L}</option><option value="D" ${v === 'D' ? 'selected' : ''}>${SH.D}</option></select>`;
-  wrap(`<div class="card"><h2>সবাইকে বার্তা পাঠান</h2><p class="sub">আপনার বার্তা সবাই অ্যাপে ঢুকলেই দেখতে পাবেন।</p>
-  <label>বার্তা</label><textarea id="nt_t" maxlength="300" placeholder="যেমন: আগামীকাল বুয়া আসবেন না।"></textarea>
-  <label>কতদিন দেখানো হবে</label><select id="nt_d"><option value="1">১ দিন (শুধু আজ)</option><option value="3" selected>৩ দিন</option><option value="7">৭ দিন</option><option value="14">১৪ দিন</option></select>
-  <button class="btn" onclick="ntSend()">বার্তা পাঠান</button>
-  ${act.length ? `<h3 style="margin-top:18px">এখন দেখানো হচ্ছে</h3>${act.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>${fmt(r[3])} পর্যন্ত দেখানো হবে</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">মুছুন</button></div>`).join('')}` : ''}</div>
-  <div class="card"><h2>মেস বন্ধ রাখুন</h2><p class="sub">এক বেলা থেকে কয়েকদিন পর্যন্ত মেস বন্ধ রাখতে পারবেন। এই সময়ের মিল হিসাবে ধরা হবে না এবং সবাই নোটিফিকেশন পাবেন।</p>
-  <label>শুরু</label><div class="flex"><input type="date" id="mo_f" value="${t}">${shSel('mo_fs', 'L')}</div>
-  <label>শেষ<div class="hint">এক বেলা বন্ধ রাখতে শুরু ও শেষ একই তারিখ ও একই বেলা দিন।</div></label><div class="flex"><input type="date" id="mo_t" value="${t}">${shSel('mo_ts', 'L')}</div>
-  <label>কারণ (ঐচ্ছিক)<div class="hint">যেমন: বুয়া আসবেন না, ঈদের ছুটি</div></label><input id="mo_n" maxlength="100">
-  <button class="btn red" onclick="moAdd()">মেস বন্ধ ঘোষণা করুন</button>
-  ${up.length ? `<h3 style="margin-top:18px">চলমান ও আসন্ন মেস বন্ধ</h3>${up.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${moTxt([r[0], r[2], r[3], r[4], r[5], r[6]])}<small>${r[2] <= t ? 'এখন চলছে' : 'আসন্ন'}</small></div><button class="btn sm sec" onclick="moDel('${r[0]}')">বাতিল</button></div>`).join('')}` : ''}</div>`);
+  wrap(`<div class="card"><h2>Send a message to everyone</h2><p class="sub">Everyone will see your message when they open the app.</p>
+  <label>Message</label><textarea id="nt_t" maxlength="300" placeholder="e.g. Maid will not come tomorrow."></textarea>
+  <label>How long to show</label><select id="nt_d"><option value="1">1 day (today only)</option><option value="3" selected>3 days</option><option value="7">7 days</option><option value="14">14 days</option></select>
+  <button class="btn" onclick="ntSend()">Send message</button>
+  ${act.length ? `<h3 style="margin-top:18px">Showing now</h3>${act.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>Shown until ${fmt(r[3])}</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">Delete</button></div>`).join('')}` : ''}</div>
+  <div class="card"><h2>Close the mess</h2><p class="sub">You can close the mess from one meal up to several days. These meals are not counted and everyone gets a notification.</p>
+  <label>Start</label><div class="flex"><input type="date" id="mo_f" value="${t}">${shSel('mo_fs', 'L')}</div>
+  <label>End<div class="hint">To close for one meal, use the same date and the same meal for start and end.</div></label><div class="flex"><input type="date" id="mo_t" value="${t}">${shSel('mo_ts', 'L')}</div>
+  <label>Reason (optional)<div class="hint">e.g. Maid unavailable, Eid holiday</div></label><input id="mo_n" maxlength="100">
+  <button class="btn red" onclick="moAdd()">Announce mess closure</button>
+  ${up.length ? `<h3 style="margin-top:18px">Current and upcoming mess closures</h3>${up.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${moTxt([r[0], r[2], r[3], r[4], r[5], r[6]])}<small>${r[2] <= t ? 'Running now' : 'Upcoming'}</small></div><button class="btn sm sec" onclick="moDel('${r[0]}')">Cancel</button></div>`).join('')}` : ''}</div>`);
 }
-const ntSend = () => { const d = {text: $('#nt_t').value.trim(), days: $('#nt_d').value}; if (!d.text) return toast('অনুগ্রহ করে বার্তাটি লিখুন', 1); M('ntAdd', d).then(() => { toast('বার্তা সবাইকে পাঠানো হয়েছে'); vAnn(); }).catch(err); };
-const ntDel = id => confirm('এই বার্তাটি মুছে ফেলবেন?') && M('ntDel', {id: id}).then(() => { toast('বার্তা মুছে ফেলা হয়েছে'); vAnn(); }).catch(err);
+const ntSend = () => { const d = {text: $('#nt_t').value.trim(), days: $('#nt_d').value}; if (!d.text) return toast('Please write the message', 1); mgrCall('ntAdd', d).then(() => { toast('Message sent to everyone'); vAnn(); }).catch(err); };
+const ntDel = id => confirm('Delete this message?') && mgrCall('ntDel', {id: id}).then(() => { toast('Message deleted'); vAnn(); }).catch(err);
 const moAdd = () => {
   const d = {from: $('#mo_f').value, fromShift: $('#mo_fs').value, to: $('#mo_t').value, toShift: $('#mo_ts').value, note: $('#mo_n').value.trim()};
-  if (!d.from || !d.to) return toast('অনুগ্রহ করে তারিখ দিন', 1);
-  if (d.to < d.from || (d.to === d.from && d.fromShift === 'D' && d.toShift === 'L')) return toast('শেষের সময় শুরুর সময়ের পরে হতে হবে', 1);
-  if (!confirm('মেস বন্ধ থাকবে: ' + moTxt(['', d.from, d.fromShift, d.to, d.toShift, '']) + '।\nসবাই এই বিষয়ে নোটিফিকেশন পাবেন। আপনি কি নিশ্চিত?')) return;
-  M('moAdd', d).then(() => { toast('মেস বন্ধের ঘোষণা সবাইকে জানানো হয়েছে'); vAnn(); }).catch(err);
+  if (!d.from || !d.to) return toast('Please enter a date', 1);
+  if (d.to < d.from || (d.to === d.from && d.fromShift === 'D' && d.toShift === 'L')) return toast('The end must be after the start', 1);
+  if (!confirm('The mess will be closed: ' + moTxt(['', d.from, d.fromShift, d.to, d.toShift, '']) + '.\nEveryone will get a notification. Are you sure?')) return;
+  mgrCall('moAdd', d).then(() => { toast('Mess closure announced to everyone'); vAnn(); }).catch(err);
 };
-const moDel = id => confirm('মেস বন্ধের এই ঘোষণা বাতিল করবেন?') && M('moDel', {id: id}).then(() => { toast('ঘোষণা বাতিল করা হয়েছে'); vAnn(); }).catch(err);
+const moDel = id => confirm('Cancel this mess closure?') && mgrCall('moDel', {id: id}).then(() => { toast('Announcement cancelled'); vAnn(); }).catch(err);
 
-// ---------- গতি: ট্যাব সঙ্গে সঙ্গে খোলা (আগের তথ্য আগে দেখায়, পেছনে নতুন তথ্য আনে) ----------
 let VC = {}, CUR = '';
 const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
 const VIEWS = {off: () => form('off'), guest: () => form('guest'), baz: () => form('baz'), dep: () => form('dep'), req: vReq, adv: vAdv, ann: vAnn, pay: vPay, duty: vDuty, rep: vRep, day: vDay, mem: vMem, bill: vBill, mess: vMess, ent: vEnt};
 const typing = () => { const e = document.activeElement; return !!(e && /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && $('#v').contains(e)); };
 const rc = (fn, ...a) => {
   const k = fn + JSON.stringify(a), hit = VC[k], tab = CUR, get = () => call(fn, a).then(d => (VC[k] = d));
-  if (hit === undefined) { load(1, 'লোড হচ্ছে...'); return get().finally(() => load(-1)); }
+  if (hit === undefined) { load(1, 'Loading...'); return get().finally(() => load(-1)); }
   get().then(d => { if (JSON.stringify(d) !== JSON.stringify(hit) && CUR === tab && !typing() && VIEWS[tab]) VIEWS[tab](); }).catch(() => {});
   return Promise.resolve(hit);
 };
 
 start();
-</script>
-<script>
-/* English on top, Bangla (original text) below */
-(function () {
-  const E = {
-    'অনুরোধ': 'Requests', 'ভাত রান্না হচ্ছে...': 'Cooking the rice...', 'বাজার করা হচ্ছে...': 'Going to the bazar...', 'মিল গোনা হচ্ছে...': 'Counting the meals...', 'মাছ ভাজা হচ্ছে...': 'Frying the fish...',
-    'তরকারি নাড়া হচ্ছে...': 'Stirring the curry...', 'বিল মেলানো হচ্ছে...': 'Matching the bills...', 'একটু সময় লাগছে, অনুগ্রহ করে অপেক্ষা করুন...': 'This is taking a little time. Please wait...',
-    'সংরক্ষণ হচ্ছে...': 'Saving...', 'অনুরোধ পাঠানো হচ্ছে...': 'Sending request...', 'লগইন হচ্ছে...': 'Logging in...', 'লোড হচ্ছে...': 'Loading...',
-    'ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না। অনুগ্রহ করে আবার চেষ্টা করুন।': 'No internet connection. Please try again.', 'আবার চেষ্টা করুন': 'Try again', 'স্বাগতম': 'Welcome', 'চালিয়ে যেতে লগইন করুন': 'Log in to continue',
-    'আপনার নাম': 'Your name', 'ম্যানেজার': 'Manager', '৪ সংখ্যার পিন': '4-digit PIN', 'লগইন': 'Log in', 'নতুন সদস্য? অ্যাকাউন্ট খুলুন': 'New member? Create an account', 'অনুগ্রহ করে আপনার ৪ সংখ্যার পিন দিন': 'Please enter your 4-digit PIN',
-    'অ্যাকাউন্ট খুলুন': 'Create account', 'ম্যানেজার আপনার অনুরোধ অনুমোদন করবেন।': 'The manager will approve your request.', 'পূর্ণ নাম': 'Full name', 'নিজের জন্য ৪ সংখ্যার পিন বেছে নিন': 'Choose a 4-digit PIN for yourself',
-    'এগিয়ে যান': 'Continue', 'লগইনে ফিরে যান': 'Back to log in', 'অনুগ্রহ করে আপনার নাম লিখুন': 'Please enter your name', 'পিন ৪ সংখ্যার হতে হবে': 'PIN must be 4 digits', 'অনুগ্রহ করে তথ্যগুলো দেখে নিন': 'Please check your details',
-    'নাম': 'Name', 'পিন': 'PIN', 'নিশ্চিত করে অনুরোধ পাঠান': 'Confirm and send request', 'সম্পাদনা': 'Edit', 'অনুরোধ পাঠানো হয়েছে ✅': 'Request sent ✅',
-    'অনুগ্রহ করে ম্যানেজারের অনুমোদনের জন্য অপেক্ষা করুন। অনুমোদনের পর নাম ও পিন দিয়ে লগইন করুন।': 'Please wait for the manager to approve you. After approval, log in with your name and PIN.',
-    'রিপোর্ট': 'Report', 'আজকের মিল': "Today's Meals", 'মিল বন্ধ': 'Meal Off', 'গেস্ট মিল': 'Guest Meal', 'বাজার': 'Bazar', 'বাজারের পালা': 'Bazar Duty', 'অগ্রিম': 'Advance', 'ঘোষণা': 'Announcements', 'জমা': 'Deposit',
-    'বিল': 'Bills', 'মেস': 'Mess', 'এন্ট্রি': 'Entries', 'পেমেন্ট': 'Payments', 'মেস ম্যানেজার': 'Mess Manager',
-    'বাইরে থাকলে মিল বন্ধ রাখুন। আজ ও আগামী দিনের মিল বন্ধ করা যাবে।': 'Stop your meals while you are away. You can stop meals for today and future days.', 'মিল বন্ধ শুরুর তারিখ': 'Meal off from (date)', 'কোন বেলা থেকে': 'Starting from',
-    'আবার মিল চালুর তারিখ': 'Meal on again from (date)', 'ফিরে আসার তারিখ জানা না থাকলে খালি রাখুন, পরে দিতে পারবেন।': 'Leave empty if you do not know your return date. You can add it later.', 'আপনার অতিথি খেলে এখানে লিখুন।': 'Add guest meals eaten by your guests.',
-    'তারিখ': 'Date', 'কোন বেলা': 'Meal', 'অতিথির সংখ্যা': 'Number of guests', 'বাজারের খরচ': 'Bazar Expense', 'আপনি যে বাজার করেছেন তার খরচ এখানে লিখুন।': 'Record the bazar you bought.', 'টাকার পরিমাণ (৳)': 'Amount (৳)',
-    'কী কী কিনেছেন (ঐচ্ছিক)': 'Items bought (optional)', 'জমা এন্ট্রি': 'Deposit Entry', 'সদস্যের জমা দেওয়া টাকা এখানে লিখুন।': 'Record money deposited by a member.', 'নোট (ঐচ্ছিক)': 'Note (optional)',
-    'এখন আজকের লাঞ্চ ও ডিনার দুটোই বন্ধ করা যাবে।': 'You can stop both lunch and dinner for today.', 'আজকের লাঞ্চ বন্ধ করার সময় শেষ হয়েছে। এখন আজকের ডিনার এবং আগামী দিনের মিল বন্ধ করতে পারবেন।': "The time to stop today's lunch is over. You can stop today's dinner and future meals.",
-    'আজকের দুই বেলার মিল বন্ধ করার সময় শেষ হয়েছে। এখন আগামীকাল থেকে বন্ধ করতে পারবেন।': "The time to stop today's meals is over. You can stop meals from tomorrow.", 'অনুগ্রহ করে সব প্রয়োজনীয় ঘর পূরণ করুন': 'Please fill in all required fields',
-    'নিশ্চিত করুন': 'Confirm', 'সফলভাবে সংরক্ষণ হয়েছে': 'Saved successfully', 'আমার মিল বন্ধের তালিকা': 'My meal-off list', 'এখনো কোনো এন্ট্রি নেই': 'No entries yet', 'মিল আবার চালু হয়েছে': 'Meal is on again', 'কে কে খাবে দেখুন।': 'See who is eating.',
-    'মেস এখনো শুরু হয়নি।': 'The mess has not started yet.', 'এই বেলায় মেস বন্ধ থাকবে।': 'The mess is closed for this meal.', 'স্থগিত (বাকি টাকা আছে)': 'Frozen (unpaid dues)', 'মেস এখনো শুরু হয়নি': 'Mess not started',
-    'ম্যানেজার এখনো মেস শুরু করেননি।': 'The manager has not started the mess yet.', 'মাসের সারসংক্ষেপ': 'Month Summary', 'মোট বাজার': 'Total bazar', 'মোট মিল': 'Total meals', 'মিল রেট': 'Meal rate', 'নির্ধারিত বিল': 'Fixed bills',
-    'মোট জমা': 'Total deposit', 'সদস্যদের রিপোর্ট': 'Member Reports', 'পুরো রিপোর্ট দেখতে নামে চাপ দিন।': 'Tap a name to open the full report.', 'এখনো কোনো সদস্য নেই': 'No members yet', '← সব সদস্য': '← All members',
-    'হোয়াটসঅ্যাপের জন্য কপি': 'Copy for WhatsApp', 'প্রিন্ট / পিডিএফ': 'Print / PDF', 'কপি হয়েছে। হোয়াটসঅ্যাপে পেস্ট করুন।': 'Copied. Paste it in WhatsApp.', 'এই লেখাটি কপি করুন': 'Copy this text',
-    'সক্রিয় সদস্যরা বিল ভাগ করে নেন। নিষ্ক্রিয় সদস্য হিসাবের বাইরে থাকেন।': 'Active members share the bills. Inactive members are left out.', 'নতুন সদস্য যোগ করুন': 'Add a new member', 'সদস্য যোগ করুন': 'Add member',
-    'সদস্যকে অনুমোদন করা হয়েছে': 'Member approved', 'অনুরোধ বাতিল করা হয়েছে': 'Request rejected', 'সংরক্ষণ হয়েছে': 'Saved', 'সদস্য যোগ হয়েছে': 'Member added', 'বিল সংরক্ষণ করুন': 'Save bills', 'বিল সংরক্ষণ হয়েছে': 'Bills saved',
-    'মেস সেটিংস': 'Mess Settings', 'শুরুর তারিখ': 'Start date', 'শেষের তারিখ': 'End date', 'মেস শুরুর তারিখ': 'Start the mess on', 'মেস শুরু করুন': 'Start mess', 'মেস শেষ করার তারিখ': 'Close the mess on',
-    'বেতন পাওয়ার দিন মেস শেষ করুন': 'Close the mess on salary day', 'মেস শেষ করুন': 'Close mess', 'মিল বন্ধ করার সময়সীমা': 'Meal-off deadline', 'আজকের লাঞ্চ বন্ধের শেষ সময়': "Last time to stop today's lunch",
-    'আজকের ডিনার বন্ধের শেষ সময়': "Last time to stop today's dinner", 'সময় সংরক্ষণ করুন': 'Save times', 'নতুন মাস শুরু করুন': 'Start a new month',
-    'এই মাসের হিসাব ব্যাকআপ ফাইলে জমা রেখে নতুন মাসের জন্য সব এন্ট্রি মুছে ফেলা হবে। আগে মেস শেষ করুন।': 'Saves this month in a backup file and clears all entries for the new month. Close the mess first.',
-    'রিপোর্ট শিট আপডেট করুন': 'Update report sheets', 'রিপোর্ট শিট আপডেট হয়েছে': 'Report sheets updated', 'ম্যানেজারের পিন বদলান': 'Change manager PIN', 'পিন সংরক্ষণ করুন': 'Save PIN', 'সম্পন্ন হয়েছে': 'Done', 'সময়সীমা সংরক্ষণ হয়েছে': 'Deadline saved', 'পিন বদলানো হয়েছে': 'PIN changed',
-    'এই মাসের হিসাব ব্যাকআপ ফাইলে রেখে সব এন্ট্রি মুছে ফেলা হবে। আপনি কি চালিয়ে যেতে চান?': 'This saves the current month to a backup file and clears all entries. Continue?', 'নতুন মাস শুরু হয়েছে। ব্যাকআপ আপনার গুগল ড্রাইভে রাখা হয়েছে।': 'New month started. The backup is saved in your Google Drive.',
-    'কোনো এন্ট্রি নেই': 'No entries', 'এই এন্ট্রিটি মুছে ফেলবেন?': 'Delete this entry?', 'মুছে ফেলা হয়েছে': 'Deleted', '🔔 নতুন অনুরোধ এসেছে': '🔔 New request received', 'আপনার অনুরোধ অনুমোদিত হয়েছে': 'Your request was approved',
-    'আপনার অনুরোধ বাতিল হয়েছে': 'Your request was rejected', '💰 ম্যানেজার অগ্রিম টাকা চেয়েছেন': '💰 The manager asked for an advance payment', '🔕 মেস বন্ধের নতুন ঘোষণা এসেছে': '🔕 New mess closure announced', '📢 ম্যানেজারের নতুন বার্তা এসেছে': '📢 New message from the manager',
-    'অনুমোদিত': 'Approved', 'অপেক্ষায়': 'Pending', 'বাতিল': 'Rejected', 'অগ্রিমের অনুরোধ': 'Advance requests', 'ম্যানেজার আপনার কাছে অগ্রিম টাকা চেয়েছেন।': 'The manager asked you to pay in advance.', 'পেমেন্ট পাঠান': 'Send Payment',
-    'বাকি টাকা বা জমার টাকা দিয়েছেন? এখানে ম্যানেজারকে জানান। ম্যানেজার অনুমোদন করলে আপনার হিসাবে যোগ হবে।': 'Paid your dues or given money? Tell the manager here. Your account is updated after the manager approves.', 'যে তারিখে দিয়েছেন': 'Date you paid', 'কাকে দিয়েছেন': 'Paid to',
-    'আমার অনুরোধগুলো': 'My requests', 'এখনো কোনো অনুরোধ নেই': 'No requests yet', 'অনুগ্রহ করে টাকার পরিমাণ ও তারিখ দিন': 'Please enter the amount and date', 'টাকার পরিমাণ': 'Amount', 'নিশ্চিত করে ম্যানেজারকে পাঠান': 'Confirm and send to manager',
-    'অনুরোধ ম্যানেজারের কাছে পাঠানো হয়েছে': 'Request sent to the manager', 'অনুরোধসমূহ': 'Requests', 'সদস্যদের পাঠানো অনুরোধ অনুমোদন বা বাতিল করুন।': 'Approve or reject what members send you.', 'এই পেমেন্টের অনুরোধ বাতিল করবেন?': 'Reject this payment request?',
-    'পেমেন্ট অনুমোদিত হয়েছে এবং হিসাবে যোগ হয়েছে': 'Payment approved and added to the account', 'এই অনুরোধটি বাতিল করবেন?': 'Reject this request?', 'চলছে': 'Running now', 'আজ শুরু': 'Starts today', 'আগামীকাল': 'Tomorrow', '২ দিন পর': 'In 2 days',
-    'বাজারের পালার তালিকা': 'Bazar duty schedule', 'কে কবে বাজার করবেন।': 'Who does the bazar and when.', 'কোনো পালা ঠিক করা নেই': 'No bazar duty planned', 'অনুগ্রহ করে সঠিক তারিখ দিন': 'Please enter valid dates', 'তালিকায় যোগ হয়েছে': 'Added to schedule',
-    'এই পালাটি সরাবেন?': 'Remove this duty?', 'সরানো হয়েছে': 'Removed', 'এই অনুরোধটি আর খোলা নেই': 'This request is no longer open', 'অগ্রিম টাকার অনুরোধ': 'Advance Request',
-    'সদস্যদের কাছে আগাম টাকা চান। তারা লগইন করলেই বিজ্ঞপ্তি দেখবেন এবং পেমেন্ট ট্যাব থেকে টাকা পাঠাতে পারবেন।': 'Ask members to pay money in advance. They see a notice when they log in and can send the payment from the Payments tab.', 'সবাইকে বেছে নিন': 'Select all',
-    'প্রত্যেক সদস্যের টাকা (৳)': 'Amount for each member (৳)', 'টাকা দেওয়ার শেষ তারিখ': 'Last date to pay', 'কোনো অপেক্ষমাণ অগ্রিম অনুরোধ নেই': 'No pending advance requests', 'অনুগ্রহ করে কমপক্ষে একজন সদস্য বেছে নিন': 'Please select at least one member',
-    'অনুগ্রহ করে টাকার পরিমাণ ও শেষ তারিখ দিন': 'Please enter the amount and last date', 'প্রত্যেকের টাকা': 'Amount each', 'মোট': 'Total', 'শেষ তারিখ': 'Last date', 'নিশ্চিত করে পাঠান': 'Confirm and send', 'পরিশোধিত হিসেবে চিহ্নিত হয়েছে': 'Marked as paid',
-    'অনুরোধ বাতিল হয়েছে': 'Request cancelled', 'সবাইকে বার্তা পাঠান': 'Send a message to everyone', 'আপনার বার্তা সবাই অ্যাপে ঢুকলেই দেখতে পাবেন।': 'Everyone will see your message when they open the app.', 'বার্তা': 'Message', 'কতদিন দেখানো হবে': 'How long to show',
-    '১ দিন (শুধু আজ)': '1 day (today only)', '৩ দিন': '3 days', '৭ দিন': '7 days', '১৪ দিন': '14 days', 'বার্তা পাঠান': 'Send message', 'মেস বন্ধ রাখুন': 'Close the mess',
-    'এক বেলা থেকে কয়েকদিন পর্যন্ত মেস বন্ধ রাখতে পারবেন। এই সময়ের মিল হিসাবে ধরা হবে না এবং সবাই নোটিফিকেশন পাবেন।': 'You can close the mess from one meal up to several days. These meals are not counted and everyone gets a notification.', 'শুরু': 'Start', 'শেষ': 'End',
-    'এক বেলা বন্ধ রাখতে শুরু ও শেষ একই তারিখ ও একই বেলা দিন।': 'To close for one meal, use the same date and the same meal for start and end.', 'কারণ (ঐচ্ছিক)': 'Reason (optional)', 'মেস বন্ধ ঘোষণা করুন': 'Announce mess closure', 'অনুগ্রহ করে বার্তাটি লিখুন': 'Please write the message',
-    'বার্তা সবাইকে পাঠানো হয়েছে': 'Message sent to everyone', 'এই বার্তাটি মুছে ফেলবেন?': 'Delete this message?', 'বার্তা মুছে ফেলা হয়েছে': 'Message deleted', 'অনুগ্রহ করে তারিখ দিন': 'Please enter a date', 'শেষের সময় শুরুর সময়ের পরে হতে হবে': 'The end must be after the start',
-    'মেস বন্ধের ঘোষণা সবাইকে জানানো হয়েছে': 'Mess closure announced to everyone', 'মেস বন্ধের এই ঘোষণা বাতিল করবেন?': 'Cancel this mess closure?', 'ঘোষণা বাতিল করা হয়েছে': 'Announcement cancelled', 'লগ আউট': 'Log out', 'বন্ধ শুরু': 'Off from', 'আবার চালু': 'On again',
-    'বাজারের তালিকা': 'Bazar list', 'কী কিনেছেন': 'Items bought', 'টাকা': 'Amount', 'জমার তালিকা': 'Deposit list', 'তিনি জানিয়েছেন': 'Says they paid', 'যাকে দিয়েছেন': 'Paid to', 'পাঠানো হয়েছে': 'Sent', 'যে টাকা জমা হবে (৳)': 'Amount to record (৳)',
-    'সদস্য ভিন্ন পরিমাণ পাঠালে আপনি এটি বদলাতে পারবেন।': 'You can change it if the member sent a different amount.', '১ দিন সময় দিন': 'Allow 1 day', '২ দিন সময় দিন': 'Allow 2 days', 'বাতিল করুন': 'Cancel', 'সাম্প্রতিক সিদ্ধান্ত': 'Recent decisions',
-    'বাজারের পালা ঠিক করুন': 'Assign bazar duty', 'কে কোন তারিখে বাজার করবেন ঠিক করে দিন। পালা কাছে এলে সদস্য নোটিফিকেশন পাবেন।': 'Choose who will do the bazar and on which dates. The member gets a notification when the duty is near.', 'তালিকায় যোগ করুন': 'Add to schedule',
-    'সম্প্রতি পরিশোধ হয়েছে': 'Recently paid', 'এখন দেখানো হচ্ছে': 'Showing now', 'চলমান ও আসন্ন মেস বন্ধ': 'Current and upcoming mess closures', 'এখনো দেওয়া হয়নি': 'Not set yet', 'মিল চালু করুন': 'Turn meal on', 'কেউ নেই': 'Nobody',
-    'ফিরে এলে মিল আবার চালু করুন। আজকের লাঞ্চ ও ডিনারের সময়সীমার পরে আজকের মিল চালু করা যাবে না।': "When you return, please turn your meals on again. Today's meals cannot be turned on after today's deadline.", 'আজ পর্যন্ত (চলছে)': 'Till today (running)', 'স্থগিত': 'Frozen',
-    'পাবেন': 'Gets', 'দেবেন': 'Pays', 'আজ পর্যন্ত': 'Till today', 'আপনি ফেরত পাবেন': 'You will get back', 'আপনাকে দিতে হবে': 'You need to pay', 'গেস্ট': 'Guest', 'আগের মাসের বাকি': 'Previous month due', 'আগের মাসের জমা': 'Previous month credit',
-    'ফেরত পাবেন': 'Gets back', 'দিতে হবে': 'Needs to pay', 'অনুমোদন': 'Approve', 'সক্রিয়': 'Active', 'নিষ্ক্রিয়': 'Inactive', 'সংরক্ষণ': 'Save', 'শুরু হয়নি': 'Not started', 'মুছুন': 'Delete', 'এখনই দিন': 'Pay now', 'আপনার জন্য অপেক্ষা করছে': 'Waiting for you',
-    'গুরুত্বপূর্ণ বিজ্ঞপ্তি': 'Important notices', 'অনুরোধগুলো দেখুন': 'View requests', 'ঠিক আছে, বুঝেছি': 'OK, got it', 'আপনি অগ্রিমের অনুরোধের টাকা দিচ্ছেন। অনুগ্রহ করে পরিমাণটি দেখে নিন।': 'You are paying an advance request. Please check the amount.', 'আপনার বাকি': 'Your unpaid dues',
-    'আরও সময় দরকার?': 'Need more time?', 'আবার মিল চালু করতে ম্যানেজারের কাছে ১ বা ২ দিন সময় চাইতে পারেন।': 'You can ask the manager for 1 or 2 days to turn your meals on again.', 'আপনার অনুরোধ অপেক্ষায় আছে': 'Your request is waiting', 'সময় চেয়ে অনুরোধ পাঠান': 'Request more time',
-    'সময় চাওয়ার অনুরোধ': 'Grace request', 'নোট': 'Note', 'কোনো অপেক্ষমাণ অনুরোধ নেই 🎉': 'No pending requests 🎉', 'মেসে যোগ দিতে চান': 'Wants to join the mess', '(আপনি)': '(you)', 'সরান': 'Remove', 'কোনো সক্রিয় সদস্য নেই': 'No active members',
-    'দেরি হয়েছে': 'Overdue', 'পরিশোধিত': 'Paid', 'মিল (২) ×': 'Meals', 'আপনার করা বাজার': 'Bazar you did',
-    // new report layout
-    '১. জমা ও আগের মাসের হিসাব': '1. Deposit & previous month', '২. মিলের খরচ (বাজার খরচ)': '2. Meal cost (bazar cost)', '৩. বিল': '3. Bills', '৪. মোট খরচ': '4. Total expense', '৫. চূড়ান্ত হিসাব': '5. Final calculation',
-    'আগের মাসের বেঁচে যাওয়া টাকা': 'Previous month leftover', 'আগের মাসের কোনো হিসাব নেই': 'No previous balance', 'এই মাসের জমা': 'Deposit (this month)', 'মোট বিল': 'Total bills', 'এই মাসে কোনো বিল নেই': 'No bills this month',
-    'মিলের খরচ': 'Meal cost', 'মোট খরচ': 'Total expense', 'বিলসমূহ': 'Bills'
-  };
-  const ND = '০১২৩৪৫৬৭৮৯', MN = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'], MS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const tm = (p, h, m) => { h = +h; const pm = p === 'দুপুর' ? true : p === 'বিকেল' || p === 'সন্ধ্যা' ? true : p === 'রাত' ? h >= 6 && h !== 12 : false; return h + (m ? ':' + m : '') + ' ' + (pm ? 'PM' : 'AM'); };
-  const X = s => String(s == null ? '' : s)
-    .replace(/আজ পর্যন্ত \(চলছে\)/g, 'today (running)').replace(/আজ পর্যন্ত/g, 'today')
-    .replace(/[০-৯]/g, d => ND.indexOf(d))
-    .replace(new RegExp('(\\d{1,2}) (' + MN.join('|') + ') (\\d{4})', 'g'), (a, d, mo, y) => d + ' ' + MS[MN.indexOf(mo)] + ' ' + y)
-    .replace(/(ভোর|সকাল|দুপুর|বিকেল|সন্ধ্যা|রাত) (\d{1,2})(?::(\d\d))?টা/g, (a, p, h, m) => tm(p, h, m))
-    .replace(/লাঞ্চ/g, 'Lunch').replace(/ডিনার/g, 'Dinner').replace(/\(সারাদিন\)/g, '(all day)')
-    .replace(/ থেকে /g, ' from ').replace(/ পর্যন্ত/g, ' to').replace(/(\d)টি/g, '$1').replace(/ জন\b/g, '');
-  const tail = (x, pre) => x ? pre + x : '';
-  const R = [
-    [/^সদস্য \((.+)জন\)$/, m => 'Members (' + X(m[1]) + ')'], [/^সদস্য \((.+)\)$/, m => 'Members (' + X(m[1]) + ')'], [/^অনুমোদনের অপেক্ষায় \((.+)\)$/, m => 'Waiting for approval (' + X(m[1]) + ')'],
-    [/^নতুন সদস্য \((.+)\)$/, m => 'New members (' + X(m[1]) + ')'], [/^অনুরোধ \((.+)\)$/, m => 'Requests (' + X(m[1]) + ')'], [/^টাকার অপেক্ষায় \((.+)\)$/, m => 'Waiting for payment (' + X(m[1]) + ')'],
-    [/^(.+) থেকে (.+) · (.+) দিন$/, m => X(m[1]) + ' to ' + X(m[2]) + ' · ' + X(m[3]) + ' days'], [/^(.+) থেকে (?!আজ)(.+) পর্যন্ত$/, m => X(m[1]) + ' to ' + X(m[2])], [/^(\d{4}-\d\d-\d\d) থেকে (.+)$/, m => m[1] + ' to ' + X(m[2])],
-    [/^(.+)টি মিল · খরচ (.+?)(?: · )?$/, m => X(m[1]) + ' meals · cost ' + X(m[2])], [/^(.+) · (.+)টি মিল$/, m => X(m[1]) + ' · ' + X(m[2]) + ' meals'], [/^\+(.+) গেস্ট$/, m => '+' + X(m[1]) + ' guest'],
-    [/^মিল \((.+)\) × (.+)$/, m => 'Meals (' + X(m[1]).replace('গেস্ট', 'guest') + ') × ' + X(m[2])], [/^(.+) \(অংশ\)$/, m => m[1] + ' (share)'], [/^বিল (.+)$/, m => 'Bill ' + X(m[1])],
-    [/^বাজার খরচ \((.+) দিন\)$/, m => 'Bazar spent (' + X(m[1]) + ' days)'], [/^আপনার করা বাজার \((.+) দিন\)$/, m => 'Bazar you did (' + X(m[1]) + ' days)'], [/^মিল রেট = মোট বাজার (.+) ÷ মোট মিল (.+) = (.+)$/, m => 'Meal rate = total bazar ' + X(m[1]) + ' ÷ total meals ' + X(m[2]) + ' = ' + X(m[3])],
-    [/^(.+) থেকে বন্ধ আছে, ফিরে এসেছেন\?$/, m => 'Off since ' + X(m[1]) + '. Are you back?'], [/^(.+) দিনের সময় দেওয়া হয়েছে$/, m => 'Grace period approved for ' + X(m[1]) + ' days'], [/^(.+) জন সদস্যকে অনুরোধ পাঠানো হয়েছে$/, m => 'Request sent to ' + X(m[1]) + ' members'],
-    [/^(.+) দিন পর$/, m => 'In ' + X(m[1]) + ' days'], [/^(.+) পর্যন্ত দেখানো হবে$/, m => 'Shown until ' + X(m[1])], [/^পেমেন্ট (.+)$/, m => 'Payment ' + X(m[1])], [/^(.+) · পেমেন্ট (.+)$/, m => m[1] + ' · Payment ' + X(m[2])], [/^(.+) · সময় চাওয়া$/, m => m[1] + ' · Grace request'],
-    [/^ম্যানেজারকে · (.+)$/, m => 'To Manager · ' + X(m[1])], [/^(.+)-কে · (.+)$/, m => 'To ' + m[1] + ' · ' + X(m[2])], [/^(.+)-এর মধ্যে দিন(?: · (.+))?$/, m => 'Pay by ' + X(m[1]) + tail(m[2], ' · ')],
-    [/^💰 (.+)-এর পেমেন্ট$/, m => '💰 Payment from ' + m[1]], [/^⏳ (.+)-এর সময় চাওয়ার অনুরোধ$/, m => '⏳ Grace request from ' + m[1]], [/^মোট চাওয়া হয়েছে: (.+)$/, m => 'Total asked: ' + X(m[1])],
-    [/^(.+) · (.+)-এর মধ্যে(.*)$/, m => X(m[1]) + ' · by ' + X(m[2]) + (m[3] ? ' ·' + m[3].replace(/^ · ?/, ' ') : '')],
-    [/^আপনার সিদ্ধান্তের অপেক্ষায় (.+)টি অনুরোধ আছে।$/, m => 'You have ' + X(m[1]) + ' requests waiting for your decision.'],
-    [/^বাকি টাকার কারণে এই সদস্য স্থগিত আছেন এবং আরও কয়েকদিন মিল চালু রাখতে চান। অনুরোধ পাঠানো হয়েছে: (.+)।$/, m => 'This member is frozen because of unpaid dues and wants to use meals for a few more days. Sent: ' + X(m[1]) + '.'],
-    // rules
-    [/^নিয়ম: আজকের লাঞ্চ (.+) পর্যন্ত এবং আজকের ডিনার (.+) পর্যন্ত বন্ধ করা যায়।/, m => "Rule: today's lunch can be stopped until " + X(m[1]) + " and today's dinner until " + X(m[2]) + '. Food is wasted once cooking is done. Meals that have already been eaten cannot be stopped.'],
-    [/^আজকের লাঞ্চ ও ডিনার এই সময়ের পর আর বন্ধ করা যাবে না।/, () => "Today's lunch and dinner cannot be stopped after these times. Food is wasted once cooking is done, so please set the times."],
-    [/^সব সক্রিয় সদস্য সমান ভাগে দেবেন।/, () => 'Shared equally among all active members.'],
-    [/^এই পিন দিয়ে আপনি লগইন করবেন।/, () => 'You will log in with this PIN.'],
-    [/^আপনার (.+) পেমেন্টের অনুরোধ অনুমোদিত হয়েছে।(?: (.+)।)?$/, m => 'Your ' + X(m[1]) + ' payment request was approved.' + tail(m[2], ' ')], [/^আপনার (.+) পেমেন্টের অনুরোধ অনুমোদিত হয়নি।$/, m => 'Your ' + X(m[1]) + ' payment request was not approved.'],
-    [/^আপনার সময় চাওয়ার অনুরোধ অনুমোদিত হয়েছে।(?: (.+)।)?$/, m => 'Your grace period request was approved.' + tail(m[1], ' ')], [/^আপনার সময় চাওয়ার অনুরোধ অনুমোদিত হয়নি।$/, () => 'Your grace period request was not approved.'],
-    // alerts
-    [/^আপনার অ্যাকাউন্ট স্থগিত আছে। আপনার (.+) বাকি আছে, তাই আপনার মিল বন্ধ।/, m => 'Your account is frozen. You have ' + X(m[1]) + ' unpaid dues, so your meals are off. Please pay and send the payment details, or ask the manager for a few days.'],
-    [/^সতর্কতা: অনুগ্রহ করে (.+)-এর মধ্যে (.+) পরিশোধ করুন।/, m => 'Warning: please pay ' + X(m[2]) + ' by ' + X(m[1]) + '. After that your account will be frozen.'],
-    [/^🔕 মেস এখন বন্ধ আছে: (.+?)(?:। কারণ: (.+?))?। এই সময়ের মিল হিসাবে ধরা হবে না।$/, m => '🔕 The mess is closed now: ' + X(m[1]) + (m[2] ? '. Reason: ' + m[2] : '') + '. Meals in this period are not counted.'],
-    [/^🔕 মেস বন্ধ থাকবে: (.+?)(?:। কারণ: (.+?))?। এই সময়ের মিল হিসাবে ধরা হবে না।$/, m => '🔕 The mess will be closed: ' + X(m[1]) + (m[2] ? '. Reason: ' + m[2] : '') + '. Meals in this period are not counted.'],
-    [/^📢 ম্যানেজারের বার্তা: (.+)$/, m => '📢 Message from the manager: ' + m[1]],
-    [/^আপনার (.+) অগ্রিম দেওয়ার শেষ তারিখ ছিল (.+)।(?: নোট: (.+))?$/, m => 'The last date to pay your ' + X(m[1]) + ' advance was ' + X(m[2]) + '.' + tail(m[3], ' Note: ')],
-    [/^ম্যানেজার (.+)-এর মধ্যে আপনার কাছে (.+) অগ্রিম চেয়েছেন।(?: নোট: (.+))?$/, m => 'The manager asked you for ' + X(m[2]) + ' in advance by ' + X(m[1]) + '.' + tail(m[3], ' Note: ')],
-    [/^আপনার বাজারের পরবর্তী পালা: (.+)।$/, m => 'Your next bazar duty: ' + X(m[1]) + '.'], [/^আপনার বাজারের পালা এখন চলছে \((.+)\)। অনুগ্রহ করে বাজার করুন।$/, m => 'Your bazar duty is running now (' + X(m[1]) + '). Please do the bazar.'],
-    [/^আজ থেকে আপনার বাজারের পালা শুরু \((.+)\)।$/, m => 'Your bazar duty starts today (' + X(m[1]) + ').'], [/^আগামীকাল থেকে আপনার বাজারের পালা শুরু \((.+)\)।$/, m => 'Your bazar duty starts tomorrow (' + X(m[1]) + ').'],
-    [/^আর ২ দিন পর আপনার বাজারের পালা শুরু \((.+)\)।$/, m => 'Your bazar duty starts in 2 days (' + X(m[1]) + ').'],
-    [/^আপনার বাজারের পালায় \((.+)\) আপনি এখন পর্যন্ত (.+) বার বাজার করেছেন, মোট (.+)।$/, m => 'In your bazar duty (' + X(m[1]) + ') you have done the bazar ' + X(m[2]) + ' times so far, total ' + X(m[3]) + '.'],
-    [/^আপনার বাজারের পালা চলছে \((.+)\)। এখনো কোনো বাজার লেখা হয়নি।$/, m => 'Your bazar duty is running (' + X(m[1]) + '). No bazar has been recorded yet.'],
-    [/^মেস বন্ধ থাকবে: (.+?)।\nসবাই এই বিষয়ে নোটিফিকেশন পাবেন। আপনি কি নিশ্চিত\?$/s, m => 'The mess will be closed: ' + X(m[1]) + '.\nEveryone will get a notification. Are you sure?']
-  ];
-  const tr = s => {
-    if (/^যেমন/.test(s)) return null;                       // examples stay in Bangla
-    if (E[s]) return E[s];
-    for (const [re, f] of R) { const m = s.match(re); if (m) return f(m); }
-    return null;
-  };
-  const seen = new WeakSet(), B = /[\u0980-\u09F2\u09F4-\u09FF]/;
-  function proc(t) {
-    if (seen.has(t)) return; seen.add(t);
-    const p = t.parentNode; if (!p || !p.closest || p.closest('.bn,script,style,textarea')) return;
-    const s = t.nodeValue.replace(/\s+/g, ' ').trim(); if (!s || !B.test(s)) return;
-    let en = tr(s);
-    if (s === 'সদস্য') en = p.closest('#tabs, .tile') ? 'Members' : 'Member';
-    if (!en) return;
-    if (p.tagName === 'OPTION') { t.nodeValue = en + ' · ' + s; return; }
-    t.nodeValue = en + ' ';
-    const sm = document.createElement('small'); sm.className = 'bn'; sm.textContent = s; t.after(sm);
-  }
-  function attrs(root) {
-    const els = Array.from(root.querySelectorAll ? root.querySelectorAll('[placeholder]') : []); if (root.matches && root.matches('[placeholder]')) els.push(root);
-    els.forEach(el => { if (el.dataset.pb) return; el.dataset.pb = 1; const v = el.getAttribute('placeholder'), e = B.test(v) ? tr(v) : null; if (e) el.setAttribute('placeholder', e + ' · ' + v); });
-  }
-  function walk(root) {
-    if (!root) return;
-    if (root.nodeType === 3) return proc(root);
-    if (root.nodeType !== 1 || (root.closest && root.closest('.bn'))) return;
-    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), l = []; let n;
-    while ((n = w.nextNode())) l.push(n);
-    l.forEach(proc); attrs(root);
-  }
-  const obs = new MutationObserver(recs => { recs.forEach(r => r.addedNodes.forEach(walk)); obs.takeRecords(); });
-  obs.observe(document.body, {childList: true, subtree: true});
-  walk(document.body); obs.takeRecords();
-  const oc = window.confirm.bind(window), op = window.prompt.bind(window);
-  window.confirm = m => { const e = tr(String(m)); return oc(e ? e + '\n\n' + m : m); };
-  window.prompt = (m, v) => { const e = tr(String(m)); return op(e ? e + '\n' + m : m, v); };
-  window.__tr = tr;
-})();
-
 </script>
 </body></html>
