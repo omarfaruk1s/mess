@@ -111,6 +111,19 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
 .meal-box{background:#f8fafc;border:1px solid var(--b);border-radius:12px;padding:12px;margin-top:10px}
 .meal-box h4{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
 
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{border:1px solid #cbd5e1;background:#f8fafc;color:#1e293b;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.chip:hover,.chip.on{background:#f0fdfa;border-color:var(--g);color:var(--g2)}
+
+.mem-roster{border:1px solid var(--b);border-radius:12px;overflow:hidden;margin-top:8px}
+.mem-roster-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b);background:#fff;cursor:pointer}
+.mem-roster-row:last-child{border-bottom:0}
+.mem-roster-row:hover{background:#f8fafc}
+.mem-roster-row.sel{background:#f0fdfa;border-left:4px solid var(--g)}
+.mem-roster-row small{display:block;color:var(--m);font-size:12px}
+
+.adv-box{background:#f8fafc;border:1px solid var(--b);border-radius:12px;padding:12px;margin-top:12px}
+
 @media print{#tabs,.bar,button,#toast,#al,#modal,.no-print{display:none!important}.card{box-shadow:none;border:1px solid #cbd5e1}}
 
 .nt-tab{margin-left:auto!important;background:#fef3c7!important;border-color:#f59e0b!important;color:#92400e!important;font-weight:700!important}
@@ -160,6 +173,7 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
   .act-bar-meta{flex-direction:column;gap:2px}
   .act-bar-meta span{text-align:left}
   .duty-card-top{flex-direction:column;align-items:flex-start}
+  .mem-roster-row{flex-direction:column;align-items:flex-start}
 }
 </style></head><body>
 <div id="load"><div class="box"><span class="emo" id="lemo">🍛</span><b id="lmsg">Loading...</b><span class="fun" id="lfun"></span><small id="lsub"></small></div></div>
@@ -234,7 +248,7 @@ const stamp = d => (d.t0 = Date.now(), d);
 
 let U, P, TOK, ROLE, I, NAMES = [], D, LM, ME = {duties: [], nt: [], mo: [], adv: [], mine: []};
 let VC = {}, CUR = '', PRE = null, MIDS = [], RQ = {reqs: [], signups: []};
-let ENT_MODE = 'dep', DB_MODE = 'duty', MS_MODE = 'mem', SHOW_MY_DETAIL = false, MGR_DETAIL_IDX = null;
+let ENT_MODE = 'dep', DB_MODE = 'duty', SHOW_MY_DETAIL = false, MGR_DETAIL_IDX = null, SEL_MEM_IDX = 0;
 
 // ---------- Auth & Session ----------
 const SK = 'mess_sess_v3';
@@ -272,7 +286,7 @@ function doLogin(u, p, tok, silent) {
   U = u; P = p; TOK = tok;
   return run('boot', U, P, TOK).then(b => {
     ROLE = b.role; TOK = b.token || TOK; I = stamp(b.init); ME = b.me; VC = {};
-    SHOW_MY_DETAIL = false; MGR_DETAIL_IDX = null;
+    SHOW_MY_DETAIL = false; MGR_DETAIL_IDX = null; SEL_MEM_IDX = 0;
     VC['me' + JSON.stringify([U, P, TOK])] = b.me;
     VC['report' + JSON.stringify([U, P, TOK])] = b.rep;
     $('#me').textContent = ROLE === 'M' ? 'Mess Manager' : U;
@@ -303,7 +317,7 @@ function signReview() {
   $('#sc').onclick = () => run('signup', n, p, ph).then(() => wrap(`<div class="card empty"><h2>Request Sent ✅</h2><p>Please wait for the manager to approve your account. Once approved, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to Log in</button></div>`)).catch(err);
 }
 
-// ---------- Tabs (Member + Corner "All Notice" Tab) ----------
+// ---------- Tabs (Separate Members & Settings Tabs for Manager + All Notice) ----------
 function buildTabs() {
   const t = ROLE === 'M'
     ? [
@@ -313,7 +327,8 @@ function buildTabs() {
         ['ent', 'Entries'],
         ['db', 'Duty & Bills'],
         ['nc', 'Notices & Close'],
-        ['ms', 'Members & Settings'],
+        ['mem', 'Members'],
+        ['set', 'Settings'],
         ['dir', 'Contacts'],
         ['allnt', 'All Notice', true]
       ]
@@ -343,7 +358,7 @@ function go(t, sub) {
   VIEWS[t]();
 }
 
-// ---------- Rules Modal (Shown When Clicking Page "Rules" Button) ----------
+// ---------- Rules Modal ----------
 function ruleBoxContent() {
   const k = I.rules, n = hm(k.now) + Math.floor((Date.now() - I.t0) / 60000);
   let statusEn = '', statusBn = '';
@@ -547,7 +562,7 @@ function vToday() {
   loadDay();
 }
 
-// ---------- Activity Board (Bazar Assignments, Running/Remaining Days & Upcoming) ----------
+// ---------- Activity Board ----------
 function dutyStatusInfo(d, today) {
   const start = d[2], end = d[3];
   const totalDays = dayGap(start, end) + 1;
@@ -640,18 +655,6 @@ async function vAct() {
     </div>`;
   };
 
-  const runHtml = running.length
-    ? running.map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
-    : '<div class="empty">No active bazar duty today.</div>';
-
-  const upHtml = upcoming.length
-    ? upcoming.map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
-    : '<div class="empty">No upcoming bazar dates scheduled.</div>';
-
-  const doneHtml = completed.length
-    ? completed.slice().reverse().map(d => cardItem(d, dutyStatusInfo(d, t))).join('')
-    : '<div class="empty">No completed bazar duties yet.</div>';
-
   wrap(`
     <div class="card">
       <div class="p-head">
@@ -667,20 +670,20 @@ async function vAct() {
       </div>
       ${chartBox}
       <h3>🔥 Active Now / চলমান বাজার</h3>
-      ${runHtml}
+      ${running.length ? running.map(d => cardItem(d, dutyStatusInfo(d, t))).join('') : '<div class="empty">No active bazar duty today.</div>'}
     </div>
     <div class="card">
       <h3>📅 Upcoming / সামনের বাজার</h3>
-      ${upHtml}
+      ${upcoming.length ? upcoming.map(d => cardItem(d, dutyStatusInfo(d, t))).join('') : '<div class="empty">No upcoming bazar dates scheduled.</div>'}
     </div>
     <div class="card">
       <h3>✅ Completed / সম্পন্ন বাজার</h3>
-      ${doneHtml}
+      ${completed.length ? completed.slice().reverse().map(d => cardItem(d, dutyStatusInfo(d, t))).join('') : '<div class="empty">No completed bazar duties yet.</div>'}
     </div>
   `);
 }
 
-// ---------- Report (Today's Meals + Summary + My Summary + Details + Member Statements) ----------
+// ---------- Report (Today's Meals Removed) ----------
 async function vRep() {
   let d; try { d = await rc('report', U, P, TOK); } catch (e) { return err(e); }
   D = d;
@@ -712,8 +715,6 @@ async function vRep() {
     </div>
   </div>`;
 
-  const todayCard = todayMealsBlock(I.today, "Today's Meals / আজকের মিল", 'আজকের লাঞ্চ ও ডিনারে কারা খাচ্ছেন');
-
   if (ROLE !== 'M') {
     const myIdx = NAMES.indexOf(U) >= 0 ? NAMES.indexOf(U) : 0;
     const x = D.m[NAMES[myIdx]];
@@ -736,9 +737,7 @@ async function vRep() {
       <button class="btn" onclick="SHOW_MY_DETAIL=!SHOW_MY_DETAIL;vRep()">${SHOW_MY_DETAIL ? 'Hide Details / বিস্তারিত লুকান' : 'Details / বিস্তারিত হিসাব দেখুন'}</button>
     </div>`;
 
-    const myDetailSec = SHOW_MY_DETAIL ? detail(myIdx) : '';
-    wrap(todayCard + headerCard + mySummaryCard + myDetailSec);
-    loadDay();
+    wrap(headerCard + mySummaryCard + (SHOW_MY_DETAIL ? detail(myIdx) : ''));
     return;
   }
 
@@ -760,8 +759,7 @@ async function vRep() {
     }).join('') || '<div class="empty">No active members</div>'}
   </div>`;
 
-  wrap(todayCard + headerCard + statementsCard);
-  loadDay();
+  wrap(headerCard + statementsCard);
 }
 
 function detail(i) {
@@ -849,7 +847,7 @@ function share(i) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Summary copied to clipboard')).catch(() => prompt('Copy this summary:', t));
 }
 
-// ---------- Contacts Directory (No Categories: 1. Manager, 2. Buwa, 3. Members in Registration Order) ----------
+// ---------- Contacts Directory ----------
 async function vDir() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
   const c = ME.contacts || { managerName: 'Mess Manager', managerPhone: '', cookPhone: '', members: [] };
@@ -908,39 +906,93 @@ function vNC() {
   return vAnn(bar, window._ncMode || 'nt');
 }
 
-function vMS() {
-  const bar = `<div class="card"><h2>Members & Settings / মেম্বার ও সেটিংস</h2><div class="optbar" style="padding-bottom:0">${[['mem', '👥 Members'], ['mess', '⚙️ Mess & Time Rules']].map(x => `<button class="optbtn ${MS_MODE === x[0] ? 'on' : ''}" onclick="MS_MODE='${x[0]}';vMS()">${x[1]}</button>`).join('')}</div></div>`;
-  if (MS_MODE === 'mess') return vMess(bar);
-  return vMem(bar);
-}
+// ---------- Dedicated Members Tab (With Advanced Section) ----------
+async function vMem() {
+  let l, rep;
+  try {
+    [l, rep] = await Promise.all([M('lists'), rc('report', U, P, TOK).catch(() => null)]);
+  } catch (e) { return err(e); }
 
-async function vMem(bar = '') {
-  let l; try { l = await M('lists'); } catch (e) { return err(e); }
-  LM = l.members;
+  LM = l.members || [];
   const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending');
   const act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
-  wrap(`${bar}${pend.length ? `<div class="card"><h3>Pending Approvals (${pend.length})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><div><b>${esc(r[0])}</b><small>${esc(r[3] || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
-  <div class="card"><h3>Members (${act.length})</h3><p class="sub">Edit member phone numbers, PINs, or active status.<span class="bn-note">মেম্বারদের ফোন নাম্বার, পিন বা স্ট্যাটাস এডিট করুন।</span></p>
-    ${act.map(([r, i]) => `<div style="border-bottom:1px solid var(--b);padding:10px 0">
-      <div style="font-weight:700;margin-bottom:6px">${esc(r[0])}</div>
-      <div class="flex">
-        <input id="mph${i}" value="${esc(r[3] || '')}" placeholder="Phone (017...)" maxlength="14">
-        <input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric" style="max-width:75px" placeholder="PIN">
-        <select id="ma${i}" style="max-width:105px"><option value="Yes" ${r[2] === 'Yes' ? 'selected' : ''}>Active</option><option value="No" ${r[2] === 'No' ? 'selected' : ''}>Inactive</option></select>
-        <button class="btn sm" style="flex:0 0 auto" onclick="svMem(${i})">Save</button>
+  if (!LM[SEL_MEM_IDX] && act.length) SEL_MEM_IDX = act[0][1];
+  const selRow = LM[SEL_MEM_IDX] || null;
+  const selStats = selRow && rep && rep.ok && rep.m && rep.m[selRow[0]] ? rep.m[selRow[0]] : null;
+
+  const advancedCard = `<div class="card">
+    <h3>⚡ Advanced Member Controls / অ্যাডভান্সড সেকশন</h3>
+    <p class="sub">Select a member below to inspect balance, manage freeze/grace, or jump to actions.<span class="bn-note">যেকোনো মেম্বার সিলেক্ট করে তার ব্যালেন্স, ফ্রিজ/গ্রেস ও দ্রুত অ্যাকশন নিয়ন্ত্রণ করুন।</span></p>
+    <div class="mem-roster">
+      ${act.map(([r, i]) => {
+        const mRep = rep && rep.ok && rep.m && rep.m[r[0]];
+        const balTxt = mRep ? ((mRep.bal >= 0 ? '+' : '−') + tk(Math.abs(mRep.bal))) : '-';
+        const statusBadge = mRep && mRep.blocked
+          ? '<span class="badge neg">Frozen</span>'
+          : (r[2] === 'Yes' ? '<span class="badge pos">Active</span>' : '<span class="badge gray">Inactive</span>');
+        return `<div class="mem-roster-row ${SEL_MEM_IDX === i ? 'sel' : ''}" onclick="SEL_MEM_IDX=${i};vMem()">
+          <div>
+            <b>${esc(r[0])}</b>
+            <small>${esc(r[3] || 'No phone')} · PIN: ${esc(r[1])} · Balance: <b>${esc(balTxt)}</b></small>
+          </div>
+          ${statusBadge}
+        </div>`;
+      }).join('') || '<div class="empty">No active members</div>'}
+    </div>
+    ${selRow ? `<div class="adv-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div><b>Selected: ${esc(selRow[0])}</b><div class="hint">${esc(selRow[3] || 'No phone')} · Status: ${selRow[2] === 'Yes' ? 'Active' : 'Inactive'}</div></div>
+        ${selStats ? `<span class="badge ${selStats.bal >= 0 ? 'pos' : 'neg'}">${selStats.bal >= 0 ? 'Receivable' : 'Payable'} ${tk(Math.abs(selStats.bal))}</span>` : ''}
       </div>
-    </div>`).join('') || '<div class="empty">No members yet</div>'}
-  </div>
-  <div class="card"><h3>Add New Member</h3>
-    <label>Full Name</label><input id="nn">
-    <label>Mobile Number</label><input id="nph" type="tel" maxlength="14" placeholder="017XXXXXXXX">
-    <label>4-Digit PIN</label><input id="np" maxlength="4" inputmode="numeric">
-    <button class="btn" onclick="addMem()">Add Member</button>
-  </div>`);
+      ${selStats ? `<div class="tiles" style="margin-top:10px">
+        <div class="tile"><span>Meals</span><b>${f(selStats.meals + selStats.guest)}</b></div>
+        <div class="tile"><span>Deposits</span><b>${tk(selStats.dep)}</b></div>
+        <div class="tile"><span>Bazar Spent</span><b>${tk(selStats.bazar)}</b></div>
+        <div class="tile"><span>Unpaid Due</span><b>${tk(selStats.due || 0)}</b></div>
+      </div>` : ''}
+      <div class="flex" style="margin-top:10px">
+        <button class="btn sm sec" onclick="toggleMemActive(${SEL_MEM_IDX})">${selRow[2] === 'Yes' ? 'Set Inactive' : 'Set Active'}</button>
+        <button class="btn sm sec" onclick="DB_MODE='adv';go('db')">Send Advance</button>
+        <button class="btn sm" onclick="MGR_DETAIL_IDX=${rep && rep.ok && rep.m ? Object.keys(rep.m).indexOf(selRow[0]) : -1};if(MGR_DETAIL_IDX>=0)go('rep');else toast('No report data yet',1)">Full Statement</button>
+      </div>
+    </div>` : ''}
+  </div>`;
+
+  wrap(`
+    <div class="card">
+      <h2>Members / মেম্বার তালিকা</h2>
+      <p class="sub">Approve pending members, edit phone/PIN/status, or add new members.<span class="bn-note">নতুন মেম্বার অ্যাপ্রুভ করুন, তথ্য এডিট করুন বা নতুন মেম্বার যুক্ত করুন।</span></p>
+    </div>
+    ${pend.length ? `<div class="card"><h3>Pending Approvals (${pend.length})</h3>${pend.map(([r, i]) => `<div class="row" style="cursor:default"><div><b>${esc(r[0])}</b><small>${esc(r[3] || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="appr(${i},'approve')">Approve</button><button class="btn sm red" onclick="appr(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
+    <div class="card"><h3>Members (${act.length})</h3>
+      ${act.map(([r, i]) => `<div style="border-bottom:1px solid var(--b);padding:10px 0">
+        <div style="font-weight:700;margin-bottom:6px">${esc(r[0])}</div>
+        <div class="flex">
+          <input id="mph${i}" value="${esc(r[3] || '')}" placeholder="Phone (017...)" maxlength="14">
+          <input id="mp${i}" value="${esc(r[1])}" maxlength="4" inputmode="numeric" style="max-width:75px" placeholder="PIN">
+          <select id="ma${i}" style="max-width:105px"><option value="Yes" ${r[2] === 'Yes' ? 'selected' : ''}>Active</option><option value="No" ${r[2] === 'No' ? 'selected' : ''}>Inactive</option></select>
+          <button class="btn sm" style="flex:0 0 auto" onclick="svMem(${i})">Save</button>
+        </div>
+      </div>`).join('') || '<div class="empty">No members yet</div>'}
+    </div>
+    ${advancedCard}
+    <div class="card"><h3>Add New Member</h3>
+      <label>Full Name</label><input id="nn">
+      <label>Mobile Number</label><input id="nph" type="tel" maxlength="14" placeholder="017XXXXXXXX">
+      <label>4-Digit PIN</label><input id="np" maxlength="4" inputmode="numeric">
+      <button class="btn" onclick="addMem()">Add Member</button>
+    </div>
+  `);
 }
-const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vMS(); }).catch(err);
-const svMem = i => M('member', {name: LM[i][0], phone: $('#mph' + i).value.trim(), pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Member updated'); I = stamp(await run('init')); vMS(); }).catch(err);
-const addMem = () => M('member', {name: $('#nn').value.trim(), phone: $('#nph').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = stamp(await run('init')); vMS(); }).catch(err);
+
+const appr = (i, a) => M(a, {name: LM[i][0]}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Request rejected'); I = stamp(await run('init')); vMem(); }).catch(err);
+const svMem = i => M('member', {name: LM[i][0], phone: $('#mph' + i).value.trim(), pin: $('#mp' + i).value, active: $('#ma' + i).value}).then(async () => { toast('Member updated'); I = stamp(await run('init')); vMem(); }).catch(err);
+const toggleMemActive = i => {
+  const r = LM[i]; if (!r) return;
+  const nextAct = r[2] === 'Yes' ? 'No' : 'Yes';
+  M('member', {name: r[0], phone: r[3] || '', pin: r[1], active: nextAct}).then(async () => { toast(`${r[0]} marked ${nextAct === 'Yes' ? 'Active' : 'Inactive'}`); I = stamp(await run('init')); vMem(); }).catch(err);
+};
+const addMem = () => M('member', {name: $('#nn').value.trim(), phone: $('#nph').value.trim(), pin: $('#np').value, active: 'Yes'}).then(async () => { toast('Member added'); I = stamp(await run('init')); vMem(); }).catch(err);
 
 async function vBill(bar = '') {
   let l; try { l = (await M('lists')).bills.slice(); } catch (e) { return err(e); }
@@ -949,10 +1001,11 @@ async function vBill(bar = '') {
 }
 const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
 
-async function vMess(bar = '') {
+// ---------- Dedicated Settings Tab ----------
+async function vSet() {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   const c = l.cfg, k = l.rules;
-  wrap(`${bar}
+  wrap(`
   <div class="card"><h2>Meal-Off Time Rules / মিল বন্ধের সময় নির্ধারণ</h2>
     <p class="sub">Change cutoff times for today's lunch, today's dinner, and tomorrow's lunch.<span class="bn-note">ম্যানেজার চাইলে যেকোনো সময় মিল বন্ধের কাট-অফ সময় পরিবর্তন করতে পারবেন।</span></p>
     <label>Today's Lunch Cutoff (আজকের লাঞ্চ বন্ধের শেষ সময়)</label><input type="time" id="cl" value="${k.lunch}">
@@ -986,24 +1039,49 @@ async function vMess(bar = '') {
     <button class="btn" onclick="cp()">Update PIN</button>
   </div>`);
 }
-const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vMS(); }).catch(err);
-const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Time rules updated'); I = stamp(await run('init')); vMS(); }).catch(err);
-const svContacts = () => M('contacts', {managerName: $('#cmn').value, managerPhone: $('#cmp').value, cookPhone: $('#ccp').value}).then(async () => { toast('Contacts saved'); I = stamp(await run('init')); vMS(); }).catch(err);
+const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vSet(); }).catch(err);
+const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Time rules updated'); I = stamp(await run('init')); vSet(); }).catch(err);
+const svContacts = () => M('contacts', {managerName: $('#cmn').value, managerPhone: $('#cmp').value, cookPhone: $('#ccp').value}).then(async () => { toast('Contacts saved'); I = stamp(await run('init')); vSet(); }).catch(err);
 const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
-const nm = () => confirm('Archive current month and reset entries for a new month?') && M('newMonth').then(() => { toast('New month started. Backup saved to Drive.'); vMS(); }).catch(err);
+const nm = () => confirm('Archive current month and reset entries for a new month?') && M('newMonth').then(() => { toast('New month started. Backup saved to Drive.'); vSet(); }).catch(err);
 
-// ---------- Live Notifications, Notices (Dismissible by Member) & Polling ----------
+// ---------- Live Notifications, Notices & Advance Settlement Hide ----------
 let DIS = {}, pollT, lastPend = null, lastSt = null;
 const seenKey = () => 'mess_seen_' + U;
 const disKey = () => 'mess_dis_nt_' + U;
+const paidAdvKey = () => 'mess_paid_adv_' + U;
 const getSeen = () => { try { return JSON.parse(localStorage.getItem(seenKey()) || '[]'); } catch (e) { return []; } };
 const addSeen = ids => { try { localStorage.setItem(seenKey(), JSON.stringify(getSeen().concat(ids).slice(-100))); } catch (e) {} };
 const getDisNt = () => { try { return JSON.parse(localStorage.getItem(disKey()) || '[]'); } catch (e) { return []; } };
 const addDisNt = id => { try { const a = getDisNt(); if (a.indexOf(id) < 0) { a.push(id); localStorage.setItem(disKey(), JSON.stringify(a.slice(-150))); } } catch (e) {} };
+const getPaidAdv = () => { try { return JSON.parse(localStorage.getItem(paidAdvKey()) || '[]'); } catch (e) { return []; } };
+const addPaidAdv = id => {
+  if (!id) return;
+  try {
+    const a = getPaidAdv();
+    if (a.indexOf(id) < 0) { a.push(id); localStorage.setItem(paidAdvKey(), JSON.stringify(a.slice(-200))); }
+  } catch (e) {}
+};
 const stMap = m => { const o = {}; (m.mine || []).forEach(r => o[r[0]] = r[8]); return o; };
 const reqText = r => r[3] === 'pay' ? 'Your ' + tk(r[4]) + ' payment request' : r[3] === 'grace' ? 'Your grace period request' : 'Your request ("' + r[7] + '")';
 
+function syncSettledAdvances(m) {
+  if (!m) return;
+  const paidIds = new Set(getPaidAdv());
+  (m.mine || []).forEach(r => {
+    // When a payment request with ref (advance id) is Approved, mark that advance settled/paid
+    if (r[3] === 'pay' && r[8] === 'Approved' && r[6] && String(r[6]).startsWith('ADV')) {
+      paidIds.add(String(r[6]));
+    }
+  });
+  try { localStorage.setItem(paidAdvKey(), JSON.stringify(Array.from(paidIds).slice(-200))); } catch (e) {}
+  if (Array.isArray(m.adv)) {
+    m.adv = m.adv.filter(a => String(a[5] || '').toLowerCase() !== 'paid' && !paidIds.has(String(a[0])));
+  }
+}
+
 function afterLogin() {
+  syncSettledAdvances(ME);
   lastPend = ROLE === 'M' ? ME.pending : null;
   lastSt = ROLE === 'U' ? stMap(ME) : null;
   setBell(); renderAlerts(); showModal(); startPoll();
@@ -1023,6 +1101,7 @@ function startPoll() {
     if (document.hidden) return;
     try {
       const m = await runQ('me', U, P, TOK);
+      syncSettledAdvances(m);
       if (ROLE === 'M') {
         if (lastPend !== null && m.pending > lastPend) toast('🔔 New request received');
         lastPend = m.pending;
@@ -1036,7 +1115,7 @@ function startPoll() {
           }
         });
         lastSt = s;
-        if (newIds(ME.adv, m.adv)) { toast('💰 Manager requested an advance payment'); shouldShowModal = true; }
+        if (newIds(ME.adv, m.adv)) { toast('💰 Manager requested an advance / bazar payment'); shouldShowModal = true; }
         if (newIds(ME.mo, m.mo)) { toast('🔕 New mess closure announced'); shouldShowModal = true; }
         if (newIds(ME.nt, m.nt)) { toast('📢 New notice from Manager'); shouldShowModal = true; }
         ME = m;
@@ -1061,6 +1140,7 @@ function notices() {
   const n = [], t = ME.today || I.today;
   if (ROLE !== 'U') return n;
   const disSaved = getDisNt();
+  const paidAdv = getPaidAdv();
 
   if (ME.blocked) {
     n.push({k: 'blk', lvl: 'red', act: "go('req','pay')", html: `<b>Warning / Account Frozen:</b> You have ${tk(ME.due)} unpaid dues, so meals are paused. Pay now or request a grace period.<span class="bn-sub">সতর্কতা: বকেয়ার কারণে আপনার মিল বন্ধ আছে। এখনই টাকা দিন অথবা গ্রেস পিরিয়ড চান।</span>`});
@@ -1105,9 +1185,15 @@ function notices() {
     });
   });
 
-  (ME.adv || []).forEach(a => {
+  // Only show unpaid/unsettled advance/bazar requests; once paid/settled, notice automatically disappears
+  (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0).forEach(a => {
     const g = dayGap(t, a[2]);
-    n.push({k: 'adv_' + a[0], lvl: g <= 1 ? 'red' : 'warn', act: `payAdv('${a[0]}')`, html: `<b>💰 Advance Request:</b> ${tk(a[1])} due by ${fmt(a[2])}${a[3] ? ' (' + esc(a[3]) + ')' : ''}`});
+    n.push({
+      k: 'adv_' + a[0],
+      lvl: g <= 1 ? 'red' : 'warn',
+      act: `payAdv('${a[0]}')`,
+      html: `<b>💰 Bazar / Advance Request:</b> ${tk(a[1])} due by ${fmt(a[2])}${a[3] ? ' (' + esc(a[3]) + ')' : ''} — once paid, this notice will disappear.<span class="bn-sub">টাকা শোধ হয়ে গেলে এই নোটিশ আর দেখাবে না।</span>`
+    });
   });
 
   const o = {red: 0, warn: 1, ok: 2, info: 3};
@@ -1149,17 +1235,19 @@ function closeModal(goReq) {
   if (goReq) go('req');
 }
 
-// ---------- Member: Requests (Payment, General Request, Grace & History + Stored Notices) ----------
+// ---------- Member: Requests ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vReq() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  syncSettledAdvances(ME);
   renderAlerts();
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
-  const advs = ME.adv || [];
+  const paidAdv = getPaidAdv();
+  const advs = (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0);
   const allNotices = (ME.nt || []);
   const disSaved = getDisNt();
 
-  const advCard = advs.length ? `<div class="card"><h3>Advance Requests</h3><p class="sub">The manager requested advance payment.</p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay Now</button></div>`).join('')}</div>` : '';
+  const advCard = advs.length ? `<div class="card"><h3>Bazar / Advance Requests</h3><p class="sub">Once paid & settled, the notice disappears automatically.<span class="bn-note">টাকা শোধ হলে নোটিশ অটো সরে যাবে।</span></p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay Now</button></div>`).join('')}</div>` : '';
 
   const noticesBox = `<div class="card">
     <h3>All Notices / সব নোটিশ</h3>
@@ -1179,7 +1267,7 @@ async function vReq() {
       <div><h2>Submit Payment Info / টাকা জমার তথ্য</h2><p class="sub" style="margin:0">Report money you paid to the manager.<span class="bn-note">টাকা দিলে তথ্য পাঠান; ম্যানেজার অ্যাপ্রুভ করলে হিসাবে যুক্ত হবে।</span></p></div>
       ${rulesBtn('req')}
     </div>
-    ${PRE ? '<div class="alert info" style="margin:0 0 8px">Paying requested advance amount.</div>' : ''}
+    ${PRE ? '<div class="alert info" style="margin:0 0 8px">Paying requested bazar / advance amount. Once approved, its notice will disappear.</div>' : ''}
     ${ME.due > 0 ? `<div class="banner neg"><span>Unpaid Due / বকেয়া</span><b>${tk(ME.due)}</b></div>` : ''}
     <label>Amount Paid (৳)</label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ME.due > 0 ? ME.due : ''}">
     <label>Payment Date</label><input id="pd" type="date" value="${ME.today}">
@@ -1212,7 +1300,10 @@ function payReview() {
   if (!(Number(d.amount) > 0) || !d.date) return toast('Please enter amount and date', 1);
   wrap(`<div class="card"><h3>Review Payment</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Paid To</td><td><b>${esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
   <button class="btn" id="pc">Confirm & Send</button><button class="btn sec" onclick="vReq()">Edit</button></div>`);
-  $('#pc').onclick = () => run('request', U, P, 'pay', d, TOK).then(() => { PRE = null; toast('Payment request sent'); vReq(); }).catch(err);
+  $('#pc').onclick = () => run('request', U, P, 'pay', d, TOK).then(() => {
+    if (d.ref) addPaidAdv(d.ref);
+    PRE = null; toast('Payment request sent'); vReq();
+  }).catch(err);
 }
 const sendGenReq = () => {
   const note = $('#greq_txt').value.trim();
@@ -1221,7 +1312,7 @@ const sendGenReq = () => {
 };
 const askGrace = () => run('request', U, P, 'grace', {}, TOK).then(() => { toast('Grace request sent'); vReq(); }).catch(err);
 
-// ---------- Manager: Requests (With Mandatory Rejection Reason) ----------
+// ---------- Manager: Requests ----------
 async function vMgrReq() {
   try { RQ = await M('reqs'); } catch (e) { return err(e); }
   const pend = RQ.reqs.filter(x => x[8] === 'Pending'), done = RQ.reqs.filter(x => x[8] !== 'Pending').slice(0, 15);
@@ -1258,7 +1349,11 @@ const rqPay = (id, ok) => {
     if (reason === null) return;
     if (!reason.trim()) return toast('Rejection reason is required', 1);
   }
-  M('decide', {id, ok, amount: ok ? $('#ra_' + id).value : 0, reason}).then(() => { toast(ok ? 'Payment approved' : 'Request rejected'); vMgrReq(); }).catch(err);
+  const rqRow = (RQ.reqs || []).find(x => x[0] === id);
+  M('decide', {id, ok, amount: ok ? $('#ra_' + id).value : 0, reason}).then(() => {
+    if (ok && rqRow && rqRow[6] && String(rqRow[6]).startsWith('ADV')) addPaidAdv(String(rqRow[6]));
+    toast(ok ? 'Payment approved' : 'Request rejected'); vMgrReq();
+  }).catch(err);
 };
 const rqGrace = (id, n) => {
   let reason = '';
@@ -1279,38 +1374,141 @@ const rqGen = (id, ok) => {
   M('decide', {id, ok, reply: ok ? $('#rr_' + id).value.trim() : '', reason}).then(() => { toast(ok ? 'Request approved' : 'Request rejected'); vMgrReq(); }).catch(err);
 };
 
-// ---------- Bazar Duty ----------
+// ---------- Improved Bazar Duty System (Overview + Quick Dates + Overlap Check) ----------
+function applyDutyPreset(baseDate, spanDays, btnEl) {
+  const fEl = $('#df'), tEl = $('#dt');
+  if (!fEl || !tEl) return;
+  const start = fEl.value || baseDate;
+  const end = addD(start, Math.max(0, spanDays - 1));
+  tEl.value = end;
+  document.querySelectorAll('.duty-chip').forEach(c => c.classList.remove('on'));
+  if (btnEl) btnEl.classList.add('on');
+  updateDutyHint();
+}
+
+function setDutyStartToday(today, spanDays, btnEl) {
+  const fEl = $('#df'), tEl = $('#dt');
+  if (!fEl || !tEl) return;
+  fEl.value = today;
+  tEl.value = addD(today, Math.max(0, spanDays - 1));
+  document.querySelectorAll('.duty-chip').forEach(c => c.classList.remove('on'));
+  if (btnEl) btnEl.classList.add('on');
+  updateDutyHint();
+}
+
+function updateDutyHint() {
+  const fEl = $('#df'), tEl = $('#dt'), mEl = $('#dm'), hEl = $('#duty_preview');
+  if (!fEl || !tEl || !hEl) return;
+  const fVal = fEl.value, tVal = tEl.value, mVal = mEl ? mEl.value : '';
+  if (!fVal || !tVal || tVal < fVal) {
+    hEl.innerHTML = `<span style="color:#dc2626">Invalid date range: End date must be on or after start date.</span>`;
+    return;
+  }
+  const days = dayGap(fVal, tVal) + 1;
+  const duties = ME.duties || [];
+  const clashes = duties.filter(d => !(tVal < d[2] || fVal > d[3]));
+  const clashHtml = clashes.length
+    ? `<div style="color:#b45309;margin-top:4px;font-weight:600">⚠️ Overlap alert: ${clashes.map(c => `${esc(c[1])} (${fmt(c[2])}–${fmt(c[3])})`).join(', ')} already scheduled in this range.</div>`
+    : `<div style="color:#166534;margin-top:4px">✓ No date conflict with existing duties.</div>`;
+  hEl.innerHTML = `<b>${esc(mVal)}</b> · <b>${days} day(s)</b> (${fmt(fVal)} → ${fmt(tVal)})${clashHtml}`;
+}
+
 async function vDuty(bar = '') {
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  let rep;
+  try {
+    [ME, rep] = await Promise.all([rc('me', U, P, TOK), ROLE === 'M' ? rc('report', U, P, TOK).catch(() => null) : Promise.resolve(null)]);
+  } catch (e) { return err(e); }
   renderAlerts();
   const t = ME.today || I.today, l = ME.duties || [];
-  wrap(`${bar}${ROLE === 'M' ? `<div class="card"><div class="p-head"><div><h3>Assign Bazar Duty / বাজার ডিউটি দিন</h3><p class="sub" style="margin:0">Assign bazar duty dates to members.</p></div>${rulesBtn('duty')}</div>
-  <label>Member</label><select id="dm">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-  <div class="flex"><div><label>From</label><input type="date" id="df" value="${t}"></div><div><label>To</label><input type="date" id="dt" value="${t}"></div></div>
-  <button class="btn" onclick="dutyAdd()">Add to Schedule</button></div>` : ''}
+
+  let mgrAssignCard = '';
+  if (ROLE === 'M') {
+    const sortedDuties = l.slice().sort((a, b) => a[3] > b[3] ? 1 : -1);
+    const memberOverview = I.names.map(n => {
+      const mDuties = sortedDuties.filter(d => d[1] === n);
+      const runD = mDuties.find(d => t >= d[2] && t <= d[3]);
+      const upD = mDuties.find(d => t < d[2]);
+      const lastD = mDuties.slice().reverse().find(d => t > d[3]);
+      const totalAssignedDays = mDuties.reduce((s, d) => s + (dayGap(d[2], d[3]) + 1), 0);
+      const actualBazDays = rep && rep.ok && rep.m && rep.m[n] ? rep.m[n].bl.length : null;
+      const statusBadge = runD
+        ? `<span class="badge pos">Running</span>`
+        : upD
+          ? `<span class="badge info">Next: ${fmt(upD[2])}</span>`
+          : lastD
+            ? `<span class="badge gray">Last: ${fmt(lastD[3])}</span>`
+            : `<span class="badge warn">No Duty Yet</span>`;
+      return `<tr>
+        <td><b>${esc(n)}</b><br><small style="color:var(--m)">Assigned: ${totalAssignedDays}d${actualBazDays !== null ? ' · Bazar done: ' + actualBazDays + 'd' : ''}</small></td>
+        <td>${statusBadge}</td>
+        <td><button class="btn sm sec" onclick="$('#dm').value='${esc(n)}';updateDutyHint()">Select</button></td>
+      </tr>`;
+    }).join('');
+
+    mgrAssignCard = `<div class="card">
+      <div class="p-head">
+        <div><h2>Assign Bazar Duty / বাজার ডিউটি দিন</h2><p class="sub" style="margin:0">Check everyone's duty history first, pick quick duration, and assign.<span class="bn-note">সবার ডিউটির অবস্থা দেখে সহজে তারিখ ও মেয়াদ নির্ধারণ করুন।</span></p></div>
+        ${rulesBtn('duty')}
+      </div>
+
+      <h3 style="margin-top:8px">👥 Member Duty Overview / মেম্বারদের ডিউটি স্ট্যাটাস</h3>
+      <div style="border:1px solid var(--b);border-radius:10px;overflow:auto;margin-bottom:12px">
+        <table>${memberOverview}</table>
+      </div>
+
+      <label>Select Member / মেম্বার নির্বাচন করুন</label>
+      <select id="dm" onchange="updateDutyHint()">${I.names.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+
+      <label>Quick Duration Presets / দ্রুত সময় সেট করুন</label>
+      <div class="chip-row">
+        <button type="button" class="chip duty-chip" onclick="setDutyStartToday('${t}',1,this)">Today (1d)</button>
+        <button type="button" class="chip duty-chip" onclick="setDutyStartToday('${t}',2,this)">Today + Tomorrow (2d)</button>
+        <button type="button" class="chip duty-chip on" onclick="applyDutyPreset('${t}',3,this)">3 Days</button>
+        <button type="button" class="chip duty-chip" onclick="applyDutyPreset('${t}',7,this)">7 Days</button>
+      </div>
+
+      <div class="flex">
+        <div><label>From / শুরু</label><input type="date" id="df" value="${t}" onchange="updateDutyHint()"></div>
+        <div><label>To / শেষ</label><input type="date" id="dt" value="${addD(t, 2)}" onchange="updateDutyHint()"></div>
+      </div>
+
+      <div id="duty_preview" class="adv-box" style="margin-top:10px;font-size:13px"></div>
+      <button class="btn" onclick="dutyAdd()">Add to Schedule</button>
+    </div>`;
+  }
+
+  wrap(`${bar}${mgrAssignCard}
   <div class="card"><div class="p-head"><div><h2>Bazar Duty Schedule / বাজারের শিডিউল</h2><p class="sub" style="margin:0">Assigned bazar periods and remaining days.<span class="bn-note">নির্ধারিত বাজারের তারিখ ও বাকি দিন দেখুন।</span></p></div>${ROLE !== 'M' ? rulesBtn('duty') : ''}</div>${l.length ? l.map(d => { const st = dutyStatusInfo(d, t), me = d[1] === U; return `<div class="row" style="cursor:default${me ? ';background:#f0fdfa;border-radius:10px;padding:11px 8px' : ''}"><div><b>${esc(d[1])}${me ? ' (You)' : ''}</b><small>${fmt(d[2])} to ${fmt(d[3])} · ${esc(st.detail)}</small></div><div style="display:flex;gap:6px;align-items:center;flex:0 0 auto"><span class="badge ${st.badgeClass}">${st.badgeText}</span>${ROLE === 'M' ? `<button class="btn sm red" onclick="dutyDel('${d[0]}')">Remove</button>` : ''}</div></div>`; }).join('') : '<div class="empty">No bazar duties scheduled</div>'}</div>`);
+  if (ROLE === 'M') updateDutyHint();
 }
-const dutyAdd = () => { const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value}; if (!d.from || !d.to || d.to < d.from) return toast('Please enter valid dates', 1); M('dutyAdd', d).then(() => { toast('Duty added'); VIEWS[CUR](); }).catch(err); };
+
+const dutyAdd = () => {
+  const d = {member: $('#dm').value, from: $('#df').value, to: $('#dt').value};
+  if (!d.from || !d.to || d.to < d.from) return toast('Please enter valid dates', 1);
+  M('dutyAdd', d).then(() => { toast('Duty added'); VIEWS[CUR](); }).catch(err);
+};
 const dutyDel = id => confirm('Remove this duty?') && M('dutyDel', {id}).then(() => { toast('Removed'); VIEWS[CUR](); }).catch(err);
 
-// ---------- Advance Requests ----------
+// ---------- Advance / Bazar Money Requests (Disappears Once Paid/Settled) ----------
 function payAdv(id) {
   const a = (ME.adv || []).find(x => x[0] === id); if (!a) return toast('This request is no longer open', 1);
-  PRE = {amount: a[1], ref: id, note: 'Advance'}; go('req', 'pay');
+  PRE = {amount: a[1], ref: id, note: a[3] ? `Advance (${a[3]})` : 'Advance'}; go('req', 'pay');
 }
 async function vAdv(bar = '') {
   let l; try { l = await M('adv'); } catch (e) { return err(e); }
-  const t = ME.today || I.today, open = l.filter(r => r[6] === 'Open'), paid = l.filter(r => r[6] === 'Paid').slice(0, 10);
-  wrap(`${bar}<div class="card"><h2>Request Advance Payment</h2><p class="sub">Ask members to pay in advance for bazar or bills.</p>
+  const paidLocal = getPaidAdv();
+  const isSettled = r => String(r[6] || '').toLowerCase() === 'paid' || paidLocal.indexOf(String(r[0])) >= 0;
+  const t = ME.today || I.today, open = l.filter(r => !isSettled(r)), paid = l.filter(r => isSettled(r)).slice(0, 10);
+  wrap(`${bar}<div class="card"><h2>Request Bazar / Advance Payment</h2><p class="sub">Ask members to pay for bazar or advance. Once paid/marked paid, the notice disappears.<span class="bn-note">বাজার বা অ্যাডভান্সের টাকা শোধ হলে মেম্বারের নোটিশ অটো সরে যাবে।</span></p>
   <label>Select Members</label>
   <label class="chk"><input type="checkbox" checked onchange="document.querySelectorAll('.am').forEach(c => c.checked = this.checked)"> <b>Select All</b></label>
   ${I.names.map(n => `<label class="chk"><input type="checkbox" class="am" value="${esc(n)}" checked> ${esc(n)}</label>`).join('') || '<div class="empty">No active members</div>'}
   <label>Amount per Member (৳)</label><input id="aa" type="number" inputmode="decimal" min="0" placeholder="e.g. 2000">
   <label>Due Date</label><input id="ad" type="date" value="${addD(t, 7)}">
-  <label>Note (Optional)</label><input id="an" placeholder="e.g. Monthly bazar advance">
+  <label>Note (Optional)</label><input id="an" placeholder="e.g. Bazar money / Monthly advance">
   <button class="btn" onclick="advReview()">Review Request</button></div>
-  <div class="card"><h3>Pending Advance (${open.length})</h3>${open.length ? `<p class="sub">Total Requested: ${tk(open.reduce((a, r) => a + Number(r[3]), 0))}</p>` + open.map(r => { const od = r[4] < t; return `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · Due ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div style="display:flex;gap:6px;align-items:center;flex:0 0 auto"><span class="badge ${od ? 'neg' : 'warn'}">${od ? 'Overdue' : 'Pending'}</span><button class="btn sm sec" onclick="advAct('advDone','${r[0]}')">Mark Paid</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">Cancel</button></div></div>`; }).join('') : '<div class="empty">No pending advance requests</div>'}</div>
-  ${paid.length ? `<div class="card"><h3>Recently Paid</h3>${paid.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b><small>${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><span class="badge pos">Paid</span></div>`).join('')}</div>` : ''}`);
+  <div class="card"><h3>Active / Pending Requests (${open.length})</h3>${open.length ? `<p class="sub">Total Requested: ${tk(open.reduce((a, r) => a + Number(r[3]), 0))}</p>` + open.map(r => { const od = r[4] < t; return `<div class="row" style="cursor:default;flex-wrap:wrap"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · Due ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><div style="display:flex;gap:6px;align-items:center;flex:0 0 auto"><span class="badge ${od ? 'neg' : 'warn'}">${od ? 'Overdue' : 'Pending'}</span><button class="btn sm" onclick="advAct('advDone','${r[0]}')">Mark Paid</button><button class="btn sm red" onclick="advAct('advDel','${r[0]}')">Cancel</button></div></div>`; }).join('') : '<div class="empty">No pending advance/bazar requests</div>'}</div>
+  ${paid.length ? `<div class="card"><h3>Paid / Settled (Notice Removed)</h3>${paid.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b><small>${tk(r[3])} · ${fmt(r[4])}${r[5] ? ' · ' + esc(r[5]) : ''}</small></div><span class="badge pos">Paid</span></div>`).join('')}</div>` : ''}`);
 }
 function advReview() {
   const names = Array.from(document.querySelectorAll('.am')).filter(c => c.checked).map(c => c.value);
@@ -1321,19 +1519,46 @@ function advReview() {
   <button class="btn" id="advc">Send Request</button><button class="btn sec" onclick="vDB()">Edit</button></div>`);
   $('#advc').onclick = () => M('advAdd', d).then(n => { toast('Advance request sent to ' + n + ' member(s)'); vDB(); }).catch(err);
 }
-const advAct = (a, id) => (a === 'advDone' || confirm('Cancel this advance request?')) && M(a, {id}).then(() => { toast(a === 'advDone' ? 'Marked as paid' : 'Request cancelled'); vDB(); }).catch(err);
+const advAct = (a, id) => {
+  if (a !== 'advDone' && !confirm('Cancel this advance request?')) return;
+  M(a, {id}).then(() => {
+    if (a === 'advDone') addPaidAdv(id);
+    toast(a === 'advDone' ? 'Marked as paid — notice hidden' : 'Request cancelled');
+    vDB();
+  }).catch(err);
+};
 
-// ---------- Notices & Mess Closure ----------
+// ---------- Notices (Flexible Duration / Days Set by Manager) & Mess Closure ----------
+function syncCustomNoticeDays() {
+  const sel = $('#nt_d'), box = $('#nt_custom_box');
+  if (!sel || !box) return;
+  box.style.display = sel.value === 'custom' ? 'block' : 'none';
+}
+
 async function vAnn(bar = '', mode = 'nt') {
   let nt, mo; try { [nt, mo] = await Promise.all([M('nt'), M('mo')]); } catch (e) { return err(e); }
   const t = ME.today || I.today, act = nt.filter(r => r[3] >= t), up = mo.filter(r => r[4] >= t).sort((a, b) => a[2] < b[2] ? -1 : 1);
   const shSel = (id, v) => `<select id="${id}"><option value="L" ${v === 'L' ? 'selected' : ''}>${SH.L}</option><option value="D" ${v === 'D' ? 'selected' : ''}>${SH.D}</option></select>`;
 
-  const ntCard = `<div class="card"><h2>Publish Notice / নোটিশ প্রকাশ</h2><p class="sub">All notices remain saved for members and can be dismissed by members anytime.<span class="bn-note">সব নোটিশ জমা থাকে এবং মেম্বার চাইলে নিজের ভিউ থেকে কাটতে পারে।</span></p>
-  <label>Message</label><textarea id="nt_t" maxlength="300" placeholder="e.g. Cook will be absent tomorrow morning."></textarea>
-  <label>Duration</label><select id="nt_d"><option value="1">1 Day (Today)</option><option value="3" selected>3 Days</option><option value="7">7 Days</option><option value="14">14 Days</option></select>
+  const ntCard = `<div class="card"><h2>Publish Notice / নোটিশ প্রকাশ</h2><p class="sub">Set how many days members will see this notice.<span class="bn-note">মেম্বারদের কাছে নোটিশটি কতদিন শো করবে তা সেট করে দিন।</span></p>
+  <label>Message / নোটিশের বিবরণ</label><textarea id="nt_t" maxlength="300" placeholder="e.g. Cook will be absent tomorrow morning."></textarea>
+  <label>Show Duration (কতদিন শো করবে)</label>
+  <select id="nt_d" onchange="syncCustomNoticeDays()">
+    <option value="1">1 Day (Today only)</option>
+    <option value="2">2 Days</option>
+    <option value="3" selected>3 Days</option>
+    <option value="5">5 Days</option>
+    <option value="7">7 Days</option>
+    <option value="14">14 Days</option>
+    <option value="30">30 Days</option>
+    <option value="custom">Custom Days / নির্দিষ্ট দিন</option>
+  </select>
+  <div id="nt_custom_box" style="display:none;margin-top:8px">
+    <label>Enter Number of Days (দিন সংখ্যা লিখুন)</label>
+    <input id="nt_days_num" type="number" min="1" max="365" value="4" placeholder="e.g. 4">
+  </div>
   <button class="btn" onclick="ntSend()">Publish Notice</button>
-  ${act.length ? `<h3 style="margin-top:18px">Active Notices (${act.length})</h3>${act.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>Until ${fmt(r[3])}</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">Delete</button></div>`).join('')}` : ''}</div>`;
+  ${act.length ? `<h3 style="margin-top:18px">Active Notices (${act.length})</h3>${act.map(r => `<div class="row" style="cursor:default;flex-wrap:wrap"><div style="flex:1;min-width:60%">${esc(r[2])}<small>Shows until ${fmt(r[3])}</small></div><button class="btn sm red" onclick="ntDel('${r[0]}')">Delete</button></div>`).join('')}` : ''}</div>`;
 
   const moCard = `<div class="card"><h2>Announce Mess Closure / মেস বন্ধ ঘোষণা</h2><p class="sub">Meals during closure are automatically excluded from billing.</p>
   <label>From</label><div class="flex"><input type="date" id="mo_f" value="${t}">${shSel('mo_fs', 'L')}</div>
@@ -1344,7 +1569,15 @@ async function vAnn(bar = '', mode = 'nt') {
 
   wrap(bar + (mode === 'mo' ? moCard : ntCard));
 }
-const ntSend = () => { const d = {text: $('#nt_t').value.trim(), days: $('#nt_d').value}; if (!d.text) return toast('Please write a message', 1); M('ntAdd', d).then(() => { toast('Notice published'); vNC(); }).catch(err); };
+
+const ntSend = () => {
+  const text = $('#nt_t').value.trim();
+  if (!text) return toast('Please write a message', 1);
+  const selVal = $('#nt_d').value;
+  const days = selVal === 'custom' ? Number($('#nt_days_num').value) : Number(selVal);
+  if (!days || days < 1) return toast('Please enter a valid number of days (1 or more)', 1);
+  M('ntAdd', {text, days}).then(() => { toast(`Notice published for ${days} day(s)`); vNC(); }).catch(err);
+};
 const ntDel = id => confirm('Delete this notice?') && M('ntDel', {id}).then(() => { toast('Notice deleted'); vNC(); }).catch(err);
 const moAdd = () => {
   const d = {from: $('#mo_f').value, fromShift: $('#mo_fs').value, to: $('#mo_t').value, toShift: $('#mo_ts').value, note: $('#mo_n').value.trim()};
@@ -1360,10 +1593,13 @@ const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
 // ---------- Corner Tab: All Notice ----------
 async function vAllNotice() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  syncSettledAdvances(ME);
   renderAlerts();
   const t = ME.today || I.today;
   const allNt = ME.nt || [];
   const allMo = ME.mo || [];
+  const paidAdv = getPaidAdv();
+  const activeAdvs = (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0);
   const disSaved = getDisNt();
 
   const ntHtml = allNt.length
@@ -1379,6 +1615,16 @@ async function vAllNotice() {
         </div>`;
       }).join('')
     : '<div class="empty">No notices available right now.</div>';
+
+  const advNtHtml = activeAdvs.length
+    ? activeAdvs.map(a => `<div class="nt-item">
+        <div class="nt-item-body">
+          <b>💰 Bazar / Advance: ${tk(a[1])}</b>
+          <small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''} · Disappears once paid</small>
+        </div>
+        <button class="btn sm" onclick="payAdv('${a[0]}')">Pay Now</button>
+      </div>`).join('')
+    : '';
 
   const moHtml = allMo.length
     ? allMo.map(m => {
@@ -1417,6 +1663,7 @@ async function vAllNotice() {
       <h3>📢 Manager Notices (${allNt.length})</h3>
       ${ntHtml}
     </div>
+    ${advNtHtml ? `<div class="card"><h3>💰 Pending Bazar / Advance Notices</h3>${advNtHtml}</div>` : ''}
     ${dutyNt ? `<div class="card"><h3>🛒 Bazar Duty Reminders</h3>${dutyNt}</div>` : ''}
     <div class="card">
       <h3>🔕 Mess Closure Notices (${allMo.length})</h3>
@@ -1437,7 +1684,8 @@ const VIEWS = {
   ent: vEnt,
   db: vDB,
   nc: vNC,
-  ms: vMS,
+  mem: vMem,
+  set: vSet,
   dir: vDir,
   allnt: vAllNotice
 };
