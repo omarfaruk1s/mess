@@ -290,6 +290,8 @@ function share(i) {
     x.open ? [`আগের মাস ${sg(x.open)}`] : [], [`মোট খরচ ${sg(-exp)}`, `${x.bal >= 0 ? 'ফেরত পাবেন' : 'দিতে হবে'}: ${tk(Math.abs(x.bal))}`]).join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('কপি হয়েছে। হোয়াটসঅ্যাপে পেস্ট করুন।')).catch(() => prompt('এই লেখাটি কপি করুন', t));
 }
+// ---------- ম্যানেজার ----------
+const M = (act, d) => READ_ACTS.indexOf(act) >= 0 ? rc('mgr', U, P, act, d) : run('mgr', U, P, act, d);
 async function vMem() {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   LM = l.members; const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending'), act = LM.map((r, i) => [r, i]).filter(x => x[0][2] !== 'Pending');
@@ -683,7 +685,7 @@ start();
     const p = t.parentNode; if (!p || !p.closest || p.closest('.bn,script,style,textarea')) return;
     const s = t.nodeValue.replace(/\s+/g, ' ').trim(); if (!s || !B.test(s)) return;
     let en = tr(s);
-    if (en && s === 'সদস্য') en = p.closest('#tabs') ? 'Members' : 'Member';
+    if (s === 'সদস্য') en = p.closest('#tabs, .tile') ? 'Members' : 'Member';
     if (!en) return;
     if (p.tagName === 'OPTION') { t.nodeValue = en + ' · ' + s; return; }
     t.nodeValue = en + ' ';
