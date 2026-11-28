@@ -126,9 +126,6 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
 
 @media print{#tabs,.bar,button,#toast,#al,#modal,.no-print{display:none!important}.card{box-shadow:none;border:1px solid #cbd5e1}}
 
-.nt-tab{margin-left:auto!important;background:#fef3c7!important;border-color:#f59e0b!important;color:#92400e!important;font-weight:700!important}
-.nt-tab.on{background:#d97706!important;border-color:#d97706!important;color:#fff!important}
-
 .act-chart-card{background:#f8fafc;border:1px solid var(--b);border-radius:12px;padding:12px;margin:10px 0 14px}
 .act-chart-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .act-chart-top b{font-size:13.5px;color:#0f172a}
@@ -150,13 +147,6 @@ label.chk{display:flex;gap:10px;align-items:center;font-weight:500;margin:8px 0;
 .duty-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .duty-card-dates{font-size:12.5px;color:#475569;margin-top:4px}
 .duty-card-sub{font-size:12px;color:#64748b;margin-top:2px}
-
-.nt-item{border:1px solid var(--b);border-radius:12px;padding:12px;margin-bottom:8px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.nt-item:last-child{margin-bottom:0}
-.nt-item.dim{opacity:.58;background:#f8fafc}
-.nt-item-body{flex:1;min-width:0;word-break:break-word}
-.nt-item-body b{display:block;font-size:14px;color:#0f172a}
-.nt-item-body small{display:block;color:#64748b;font-size:12px;margin-top:4px}
 
 @media (max-width:480px){
   .wrap{padding:10px}
@@ -300,7 +290,6 @@ function archiveCurrentCycleSnapshot(repData, closeDateLabel) {
       open: Number(x.open || 0),
       bal: Number(x.bal || 0)
     };
-    // Carry forward net (+ / -) balance to next month
     carryUpdates[n] = Number(x.bal || 0);
   });
   saveCarryMap(carryUpdates);
@@ -326,7 +315,14 @@ function archiveCurrentCycleSnapshot(repData, closeDateLabel) {
   saveFinalSettle(snap);
   SELECTED_PAST_IDX = 0;
 
-  // Clear all local notices, closures, duty banners, and seen modal flags on mess end
+  // Erase Bazar Duty notices, general notices, closures & seen flags when Mess Ends
+  if (ME) {
+    ME.duties = [];
+    ME.nt = [];
+    ME.mo = [];
+    ME.adv = [];
+    ME.messEnded = true;
+  }
   if (U) {
     try {
       localStorage.removeItem('mess_dis_nt_' + U);
@@ -335,7 +331,64 @@ function archiveCurrentCycleSnapshot(repData, closeDateLabel) {
     } catch (e) {}
   }
   DIS = {};
+  renderAlerts();
   return snap;
+}
+
+// ---------- Download Report as CSV for Manager & Members ----------
+function downloadSettlementCSV(snap, onlyMember) {
+  if (!snap || !snap.members) return toast('No report data available to download', 1);
+  const rows = [
+    ['Mess Final Settlement Report', `${snap.periodStart} to ${snap.periodEnd}`],
+    ['Total Bazar', snap.tb, 'Total Meals', snap.tm, 'Meal Rate', Math.round(snap.rate * 100) / 100, 'Fixed Bills', snap.fixed],
+    [],
+    ['Member', 'Regular Meals', 'Guest Meals', 'Total Meals', 'Meal Cost', 'Fixed Share', 'Total Expense', 'Deposits', 'Bazar Spent', 'Previous/Carry', 'Final Balance (+ Receivable / - Payable)']
+  ];
+  const keys = onlyMember && snap.members[onlyMember] ? [onlyMember] : Object.keys(snap.members);
+  keys.forEach(name => {
+    const m = snap.members[name];
+    const totMeals = Number(m.meals || 0) + Number(m.guest || 0);
+    const totExp = Number(m.mealCost || 0) + Number(m.share || 0);
+    rows.push([
+      name,
+      Number(m.meals || 0),
+      Number(m.guest || 0),
+      totMeals,
+      Math.round(Number(m.mealCost || 0) * 100) / 100,
+      Math.round(Number(m.share || 0) * 100) / 100,
+      Math.round(totExp * 100) / 100,
+      Math.round(Number(m.dep || 0) * 100) / 100,
+      Math.round(Number(m.bazar || 0) * 100) / 100,
+      Math.round(Number(m.open || 0) * 100) / 100,
+      Math.round(Number(m.bal || 0) * 100) / 100
+    ]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Mess_Report_${onlyMember || 'All_Members'}_${snap.periodEnd || I.today}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded!');
+}
+
+function downloadCurrentReportCSV() {
+  if (!D || !D.ok || !D.m) return toast('No active report to download', 1);
+  const snap = {
+    periodStart: D.cfg && D.cfg.Start ? D.cfg.Start : '',
+    periodEnd: (D.cfg && D.cfg.End) || I.today,
+    tb: D.tb, tm: D.tm, rate: D.rate, fixed: D.fixed,
+    members: {}
+  };
+  Object.keys(D.m).forEach(n => {
+    const x = D.m[n];
+    snap.members[n] = { meals: x.meals, guest: x.guest, mealCost: x.mealCost, share: x.share, dep: x.dep, bazar: x.bazar, open: x.open, bal: x.bal };
+  });
+  downloadSettlementCSV(snap, ROLE === 'M' ? null : U);
 }
 
 // ---------- Auth & Session ----------
@@ -434,7 +487,7 @@ function buildTabs() {
         ['dir', 'Contacts']
       ];
   $('#tabs').style.display = '';
-  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" class="${x[2] ? 'nt-tab' : ''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+  $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
 }
 
 function go(t, sub) {
@@ -447,32 +500,28 @@ function go(t, sub) {
   VIEWS[t]();
 }
 
-// ---------- Rules Modal ----------
+// ---------- Rules Modal (Updated Running-Day Lunch vs Dinner Cutoff Rule) ----------
 function ruleBoxContent() {
   const k = I.rules, n = hm(k.now) + Math.floor((Date.now() - I.t0) / 60000);
   let statusEn = '', statusBn = '';
-  if (n < hm(k.lunch)) {
-    statusEn = "Current status: You can turn off today's Lunch, today's Dinner, or future meals.";
-    statusBn = 'বর্তমান অবস্থা: এখন আজকের লাঞ্চ, আজকের ডিনার এবং আগামী দিনের মিল বন্ধ করতে পারবেন।';
-  } else if (n < hm(k.dinner)) {
-    statusEn = "Current status: Today's Lunch cutoff has passed. You can turn off today's Dinner and future meals.";
-    statusBn = 'বর্তমান অবস্থা: আজকের লাঞ্চ বন্ধের সময় শেষ। এখন আজকের ডিনার এবং আগামী দিনের মিল বন্ধ করতে পারবেন।';
+  if (n < hm(k.dinner)) {
+    statusEn = "Current status: Today's Lunch is locked (cooked at 5 AM; required notice before " + enTime(k.nextLunch) + " last night). You can turn off today's Dinner (before " + enTime(k.dinner) + ") and future meals.";
+    statusBn = 'বর্তমান অবস্থা: আজকের লাঞ্চ বন্ধ করা যাবে না (ভোর ৫টায় রান্না হয়, গতকাল রাত ' + bnTime(k.nextLunch) + '-এর মধ্যে জানাতে হতো)। আজ বিকেল ' + bnTime(k.dinner) + '-এর মধ্যে আজকের ডিনার এবং সামনের দিনের মিল বন্ধ করতে পারবেন।';
   } else if (n < hm(k.nextLunch)) {
-    statusEn = "Current status: Today's meals are locked. You can turn off tomorrow's Lunch (before " + enTime(k.nextLunch) + " tonight) and future meals.";
-    statusBn = 'বর্তমান অবস্থা: আজকের মিল বন্ধের সময় শেষ। আগামীকালের লাঞ্চ আজ ' + bnTime(k.nextLunch) + '-এর মধ্যে বন্ধ করতে পারবেন।';
+    statusEn = "Current status: Today's Lunch & Dinner are locked. You can turn off tomorrow's Lunch (before " + enTime(k.nextLunch) + " tonight) and future meals.";
+    statusBn = 'বর্তমান অবস্থা: আজকের লাঞ্চ ও ডিনার বন্ধের সময় শেষ। আগামীকালের লাঞ্চ আজ রাত ' + bnTime(k.nextLunch) + '-এর মধ্যে বন্ধ করতে পারবেন।';
   } else {
     statusEn = "Current status: Today's meals and tomorrow's Lunch are locked. You can turn off meals starting from tomorrow's Dinner.";
     statusBn = 'বর্তমান অবস্থা: আজকের মিল এবং আগামীকালের লাঞ্চ বন্ধের সময় শেষ। আগামীকালের ডিনার থেকে বন্ধ করতে পারবেন।';
   }
   return `<div>
     <b>Meal-Off Deadlines & Rules:</b><br>
-    • Today's Lunch: before <b>${enTime(k.lunch)}</b><br>
-    • Today's Dinner: before <b>${enTime(k.dinner)}</b><br>
-    • Tomorrow's Lunch: before <b>${enTime(k.nextLunch)}</b> tonight (cook prepares meals based on night count)<br>
+    • <b>Running Day Lunch:</b> Cannot be turned off on the same day (cooked at 5:00 AM — must notify before <b>${enTime(k.nextLunch)}</b> the night before).<br>
+    • <b>Running Day Dinner:</b> Can be turned off before <b>${enTime(k.dinner)}</b> today.<br>
     • Past dates cannot be turned off or turned back on.<br>
     • Duplicate meal-off for the same meal is blocked.<br>
     <b style="display:block;margin-top:6px">${statusEn}</b>
-    <span class="bn-sub">নিয়মাবলি: আজকের লাঞ্চ <b>${bnTime(k.lunch)}</b>, আজকের ডিনার <b>${bnTime(k.dinner)}</b> এবং আগামীকালের লাঞ্চ আজ <b>${bnTime(k.nextLunch)}</b>-এর মধ্যে বন্ধ করতে হবে (কারণ বুয়া রাতেই সংখ্যা জেনে রান্না করেন)। গত দিনের মিল বন্ধ বা চালু করা যাবে না। একই মিল দুবার বন্ধ করা যাবে না।<br>${statusBn}</span>
+    <span class="bn-sub">নিয়মাবলি: চলতি দিনের লাঞ্চ ভোর ৫টায় রান্না হয়, তাই আজকের লাঞ্চ বন্ধ করতে হলে গতকাল রাত <b>${bnTime(k.nextLunch)}</b>-এর মধ্যেই জানাতে হবে (আজকে আর লাঞ্চ অফ করা যাবে না)। তবে আজকের ডিনার আজ বিকেল <b>${bnTime(k.dinner)}</b>-এর মধ্যে বন্ধ করা যাবে।<br>${statusBn}</span>
   </div>`;
 }
 
@@ -486,34 +535,32 @@ const PAGE_RULES = {
     body: () => `<div>
       • <b>Meal Rate:</b> Total Bazar Expense ÷ Total Meals (Regular + Guest meals).<br>
       • <b>Fixed Bills:</b> Divided equally among all active members.<br>
-      • <b>Balance & Carry Forward:</b> (Opening/Carry Balance + Deposits + Bazar Spent) − (Meal Cost + Fixed Bill Share). Positive (+) means Receivable (পাবেন); Negative (−) means Payable (দিবেন). When a month closes, each member's (+/−) balance carries forward into the next month's advance.<br>
-      <span class="bn-sub">মিল রেট = মোট বাজার ÷ মোট মিল। ফিক্সড বিল সক্রিয় মেম্বারদের মাঝে সমানভাবে ভাগ হয়। মাস শেষ হলে সবার (+/−) ব্যালেন্স পরের মাসের অ্যাডভান্সে যুক্ত হয়।</span>
+      • <b>Balance & Carry Forward:</b> (Opening/Carry Balance + Deposits + Bazar Spent) − (Meal Cost + Fixed Bill Share). Positive (+) means Receivable (পাবেন); Negative (−) means Payable (দিবেন). When the mess ends, bazar schedules & notices are cleared and only money accounts & downloadable reports remain.<br>
+      <span class="bn-sub">মিল রেট = মোট বাজার ÷ মোট মিল। মেস শেষ হলে বাজারের শিডিউল ও নোটিশ মুছে যাবে, শুধু টাকার হিসাব ও রিপোর্ট ডাউনলোড থাকবে।</span>
     </div>`
   },
   bazar: {
     title: 'Bazar Entry Rules / বাজারের নিয়ম',
     body: () => `<div>
       • Enter the actual bazar date, total amount (৳), and item details.<br>
-      • Bazar money you spend is added to your credit in the monthly calculation.<br>
-      • Always check your assigned bazar duty dates on the Activity Board / Duty tab.<br>
-      <span class="bn-sub">সঠিক তারিখ, টাকার পরিমাণ ও বাজারের বিবরণ দিন। আপনার করা বাজারের টাকা মাসিক হিসাবে আপনার জমা হিসেবে গণ্য হবে।</span>
+      • Once you submit your bazar entry for your assigned duty, the Bazar Duty Notice disappears automatically.<br>
+      <span class="bn-sub">সঠিক তারিখ, টাকার পরিমাণ ও বাজারের বিবরণ দিন। আপনার বাজার এন্ট্রি সাবমিট হয়ে গেলে বাজার ডিউটি নোটিশ আর দেখাবে না।</span>
     </div>`
   },
   duty: {
     title: 'Bazar Duty & Activity Rules / বাজার ডিউটির নিয়ম',
     body: () => `<div>
       • Assigned members are responsible for bazar on their scheduled dates.<br>
-      • Check the top notice banner and Activity Board to see running or upcoming bazar days and remaining days.<br>
-      • Contact the manager immediately if you need any schedule change.<br>
-      <span class="bn-sub">নির্ধারিত তারিখে বাজার করতে হবে। অ্যাপের ওপরে ও Activity Board-এ আপনার বর্তমান বা সামনের বাজারের তারিখ ও বাকি দিন দেখতে পাবেন।</span>
+      • Once your bazar is completed and entered, your Bazar Duty Notice automatically hides.<br>
+      • When the mess ends, all bazar schedules are cleared.<br>
+      <span class="bn-sub">নির্ধারিত তারিখে বাজার সম্পন্ন করে এন্ট্রি দিলে বাজারের নোটিশ চলে যাবে। মেস শেষ হলে কোনো বাজার শিডিউল থাকবে না।</span>
     </div>`
   },
   req: {
     title: 'Advance & Request Rules / অ্যাডভান্স ও রিকোয়েস্টের নিয়ম',
     body: () => `<div>
-      • <b>Advance:</b> Submit your advance payment details; if you had −৳20 previous balance, ৳20 adjusts first and the rest counts as advance; if you had +৳20, it adds to your advance.<br>
-      • <b>Unpaid Dues & Freeze:</b> Unpaid dues after deadline or grace period may freeze meals until paid or grace is approved.<br>
-      • <b>Requests:</b> Submit general requests or grace requests clearly; rejected requests include the manager's reason.<br>
+      • <b>Advance:</b> Submit your advance payment details; previous (+/−) balance adjusts automatically.<br>
+      • <b>Unpaid Dues & Freeze:</b> Unpaid dues after the manager's grace notice days expire will freeze meals until paid.<br>
       <span class="bn-sub">অ্যাডভান্স দিলে আগের বকেয়া বা পাওনা অনুযায়ী স্বয়ংক্রিয়ভাবে হিসাব সমন্বয় হবে।</span>
     </div>`
   },
@@ -522,14 +569,13 @@ const PAGE_RULES = {
     body: () => `<div>
       • Add guest meals for the exact date, shift (Lunch/Dinner), and number of guests.<br>
       • Guest meals are added to your meal count at the standard meal rate.<br>
-      <span class="bn-sub">গেস্টের তারিখ, বেলা (Lunch/Dinner) ও সংখ্যা সঠিকভাবে লিখুন। গেস্ট মিল আপনার মোট মিলের সাথে যুক্ত হয়ে হিসাব হবে।</span>
+      <span class="bn-sub">গেস্টের তারিখ, বেলা (Lunch/Dinner) ও সংখ্যা সঠিকভাবে লিখুন।</span>
     </div>`
   },
   today: {
     title: 'Daily Meal Count Info / দৈনিক মিল তালিকা',
     body: () => `<div>
       • Shows members eating Lunch and Dinner on the selected date, including guest meals.<br>
-      • Frozen members or closed shifts are marked clearly.<br>
       <span class="bn-sub">নির্বাচিত তারিখের লাঞ্চ ও ডিনারে কারা খাচ্ছেন এবং কয়টি গেস্ট মিল আছে তা এখানে দেখা যায়।</span>
     </div>`
   }
@@ -544,7 +590,7 @@ const rulesBtn = key => `<button class="rules-btn no-print" onclick="openRules('
 
 // ---------- Forms (Meal Off, Guest, Bazar, Deposit) ----------
 const FORMS = {
-  off: ['Meal Off / মিল বন্ধ', 'Turn off meals when away. Duplicate meal-off for the same meal is blocked.<span class="bn-note">যাওয়ার আগে মিল বন্ধ করুন। একই বেলার মিল দুবার বন্ধ করা যাবে না।</span>', [
+  off: ['Meal Off / মিল বন্ধ', 'Running day Lunch cannot be turned off today (must notify before 10 PM previous night). Today\'s Dinner can be turned off before 4 PM.<span class="bn-note">চলতি দিনের লাঞ্চ আজ বন্ধ করা যাবে না (গতকাল রাত ১০টার মধ্যে জানাতে হতো)। আজকের ডিনার বিকেল ৪টার মধ্যে বন্ধ করা যাবে।</span>', [
     ['offDate', 'Meal Off From (Date) / কবে থেকে বন্ধ', 'date'], ['offShift', 'Starting Shift / কোন বেলা থেকে', 'shift'],
     ['onDate', 'Meal On Again (Date - Optional) / কবে চালু হবে', 'date?', 'Leave blank if return date is unknown; you can turn it on later.'], ['onShift', 'Starting Shift / কোন বেলা থেকে চালু', 'shift']]],
   guest: ['Guest Meal / গেস্ট মিল', 'Record meals eaten by your guests.<span class="bn-note">আপনার গেস্টের মিলের হিসাব যুক্ত করুন।</span>', [
@@ -558,7 +604,7 @@ function inp(k, l, t, h) {
   const ty = t.startsWith('date') ? 'date' : t === 'number' ? 'number' : 'text';
   const hint = h ? `<div class="hint">${h}</div>` : '';
   const minAttr = (k === 'offDate' || k === 'onDate') ? `min="${I.today}"` : '';
-  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">${SH.L} (লাঞ্চ)</option><option value="D">${SH.D} (ডিনার)</option></select>`;
+  if (t === 'shift') return `<label>${l}</label><select id="f_${k}"><option value="L">${SH.L} (লাঞ্চ)</option><option value="D" ${k === 'offShift' ? 'selected' : ''}>${SH.D} (ডিনার)</option></select>`;
   return `<label>${l}${hint}</label><input id="f_${k}" type="${ty}" ${t === 'date' ? `value="${I.today}"` : ''} ${minAttr} ${ty === 'number' ? 'inputmode="decimal" min="0"' : ''}>`;
 }
 
@@ -575,12 +621,35 @@ function review(type) {
   fs.forEach(x => d[x[0]] = $('#f_' + x[0]).value);
   const need = fs.filter(x => x[2] === 'date' || x[2] === 'number');
   if (need.some(x => !d[x[0]] || (x[2] === 'number' && !(Number(d[x[0]]) > 0)))) return toast('Please fill in all required fields', 1);
+
+  // Client-side pre-check for running day Lunch vs Dinner cutoff
+  if (type === 'off' && ROLE === 'U') {
+    const k = I.rules, nowM = hm(k.now) + Math.floor((Date.now() - I.t0) / 60000);
+    if (d.offDate === I.today && d.offShift === 'L') {
+      return toast('Running day Lunch cannot be turned off today (must notify before ' + enTime(k.nextLunch) + ' last night).', 1);
+    }
+    if (d.offDate === I.today && d.offShift === 'D' && nowM >= hm(k.dinner)) {
+      return toast('Today\'s Dinner cutoff (' + enTime(k.dinner) + ') has passed.', 1);
+    }
+    if (d.offDate === addD(I.today, 1) && d.offShift === 'L' && nowM >= hm(k.nextLunch)) {
+      return toast('Tomorrow\'s Lunch cutoff (' + enTime(k.nextLunch) + ' tonight) has passed.', 1);
+    }
+  }
+
   const val = x => x[2] === 'shift' ? SH[d[x[0]]] : x[2].startsWith('date') ? (d[x[0]] ? fmt(d[x[0]]) : '-') : x[2] === 'number' && x[0] === 'amount' ? tk(d[x[0]]) : (d[x[0]] || '-');
   const rows = [['Member', d.member || U]].concat(fs.filter(x => !(x[0] === 'onShift' && !d.onDate)).map(x => [x[1].split(' / ')[0].replace(/\s*\(.*\)/, ''), val(x)]));
   wrap(`<div class="card"><h3>Please Confirm Details / তথ্য যাচাই করুন</h3><table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
   <button class="btn" id="cf">Confirm</button><button class="btn sec" onclick="VIEWS[CUR]()">Edit</button></div>`);
-  $('#cf').onclick = () => run('save', U, P, type, d, TOK).then(res => {
+  $('#cf').onclick = () => run('save', U, P, type, d, TOK).then(async res => {
     toast('Saved successfully');
+    if (type === 'baz') {
+      // Refresh ME immediately so completed Bazar Duty Notice disappears right away
+      try {
+        ME = await runQ('me', U, P, TOK);
+        VC['me' + JSON.stringify([U, P, TOK])] = ME;
+        renderAlerts();
+      } catch (e) {}
+    }
     VIEWS[CUR]();
     if (type === 'off') {
       const cp = (res && res.cookPhone) || (ME.contacts && ME.contacts.cookPhone) || I.cookPhone || '';
@@ -654,6 +723,15 @@ function vToday() {
 function dutyStatusInfo(d, today) {
   const start = d[2], end = d[3];
   const totalDays = dayGap(start, end) + 1;
+  const daysDone = Number(d[4] || 0);
+  if (daysDone > 0 && today >= start) {
+    return {
+      state: 'done',
+      badgeClass: 'pos',
+      badgeText: 'Bazar Done ✅',
+      detail: `Bazar completed (${daysDone} entry)`
+    };
+  }
   if (today < start) {
     const left = dayGap(today, start);
     return {
@@ -692,11 +770,18 @@ function dutyProgressPct(d, today, state) {
 async function vAct() {
   try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
   renderAlerts();
+  if (ME.messEnded || !I.start || I.end) {
+    return wrap(`<div class="card empty">
+      <h2>Activity Board</h2>
+      <p>Mess cycle has ended. All bazar schedules and notices have been cleared. Only money accounts & reports are available.</p>
+      <button class="btn" onclick="go('rep')">View Final Report</button>
+    </div>`);
+  }
   const t = ME.today || I.today;
   const duties = (ME.duties || []).slice().sort((a, b) => a[2] < b[2] ? -1 : a[2] > b[2] ? 1 : 0);
-  const running = duties.filter(d => t >= d[2] && t <= d[3]);
-  const upcoming = duties.filter(d => t < d[2]);
-  const completed = duties.filter(d => t > d[3]);
+  const running = duties.filter(d => dutyStatusInfo(d, t).state === 'running');
+  const upcoming = duties.filter(d => dutyStatusInfo(d, t).state === 'upcoming');
+  const completed = duties.filter(d => dutyStatusInfo(d, t).state === 'done');
 
   const maxSpan = duties.reduce((mx, d) => Math.max(mx, dayGap(d[2], d[3]) + 1), 1);
   const chartRows = duties.slice(0, 8).map(d => {
@@ -771,7 +856,7 @@ async function vAct() {
   `);
 }
 
-// ---------- Report (Includes Pre-Close Dues/Surplus Preview + Post-Close Final Settlement Banner) ----------
+// ---------- Report (Includes Downloadable Report for Manager & Members When Mess Ends) ----------
 async function vRep() {
   let d; try { d = await rc('report', U, P, TOK); } catch (e) { return err(e); }
   d = applyCarryForwardToReport(d);
@@ -788,7 +873,10 @@ async function vRep() {
     return wrap(`<button class="btn sec sm no-print" style="margin-bottom:12px" onclick="MGR_DETAIL_IDX=null;vRep()">← Back to Report</button>` + detail(MGR_DETAIL_IDX));
   }
 
-  const finalCard = finalSettle ? renderFinalSettlementCard(finalSettle, ROLE === 'M' ? null : U) : '';
+  const isClosed = !!d.cfg.End || !!ME.messEnded;
+  const finalCard = (isClosed || finalSettle) ? renderFinalSettlementCard(finalSettle || {
+    periodStart: d.cfg.Start, periodEnd: d.cfg.End || I.today, tb: d.tb, tm: d.tm, rate: d.rate, fixed: d.fixed, members: d.m
+  }, ROLE === 'M' ? null : U) : '';
 
   const headerCard = `<div class="card">
     <div class="p-head">
@@ -808,6 +896,10 @@ async function vRep() {
       <div class="tile"><span>Fixed Bills / ফিক্সড বিল</span><b>${tk(d.fixed)}</b></div>
       <div class="tile"><span>Total Deposits / মোট জমা</span><b>${tk(d.td)}</b></div>
       <div class="tile"><span>Active Members / মেম্বার</span><b>${d.cnt}</b></div>
+    </div>
+    <div class="flex no-print" style="margin-top:12px">
+      <button class="btn sec" style="margin:0" onclick="downloadCurrentReportCSV()">⬇️ Download Report (CSV)</button>
+      <button class="btn sec" style="margin:0" onclick="window.print()">🖨️ Print / Save PDF</button>
     </div>
   </div>`;
 
@@ -837,10 +929,9 @@ async function vRep() {
     return;
   }
 
-  // Manager sees pre-close dues/surplus summary & quick close button right on Report
   const preCloseCard = `<div class="card">
-    <h3>⚖️ Pre-Close Dues & Balance Overview / মাস শেষ করার আগের বকেয়া ও ব্যালেন্স</h3>
-    <p class="sub">Review everyone's net payable (−) or receivable (+) before closing the month.<span class="bn-note">মাস শেষ করার আগে সবার দেনা (−) বা পাওনা (+) এক নজরে দেখে নিন।</span></p>
+    <h3>⚖️ ${isClosed ? 'Final Money Accounts / চূড়ান্ত টাকার হিসাব' : 'Pre-Close Dues & Balance Overview / মাস শেষ করার আগের বকেয়া ও ব্যালেন্স'}</h3>
+    <p class="sub">${isClosed ? 'Mess ended: bazar schedules & notices are cleared; only money accounts remain.' : 'Review everyone\'s net payable (−) or receivable (+) before closing the month.'}</p>
     ${NAMES.map((n, i) => {
       const x = d.m[n], p = x.bal >= 0;
       return `<div class="row" style="cursor:default">
@@ -854,7 +945,7 @@ async function vRep() {
         </div>
       </div>`;
     }).join('') || '<div class="empty">No active members</div>'}
-    <button class="btn red" onclick="closeMessNow()">🔒 End Mess & Carry Balances Forward</button>
+    ${!isClosed ? `<button class="btn red" onclick="closeMessNow()">🔒 End Mess & Clear Bazar/Notices</button>` : ''}
   </div>`;
 
   wrap(finalCard + headerCard + preCloseCard);
@@ -866,11 +957,12 @@ function renderFinalSettlementCard(snap, onlyMember) {
     ? (snap.members[onlyMember] ? [[onlyMember, snap.members[onlyMember]]] : [])
     : Object.keys(snap.members).map(k => [k, snap.members[k]]);
   if (!entries.length) return '';
+  window._lastRenderedSnap = snap;
   return `<div class="card" style="border-color:#0f766e">
     <div class="p-head">
       <div>
         <h2>🧾 Final Settlement Report / চূড়ান্ত হিসাব রিপোর্ট</h2>
-        <p class="sub" style="margin:0">Closed Cycle (${fmt(snap.periodStart)} – ${fmt(snap.periodEnd)}) · Balances carried to next month.<span class="bn-note">মেস বন্ধ হওয়ার চূড়ান্ত হিসাব—পরের মাসে এই (+/−) ব্যালেন্স বহাল থাকবে।</span></p>
+        <p class="sub" style="margin:0">Mess Closed (${fmt(snap.periodStart)} – ${fmt(snap.periodEnd)}) · Bazar schedule & notices cleared.<span class="bn-note">মেস শেষ হওয়ার চূড়ান্ত টাকার হিসাব—এখান থেকে রিপোর্ট ডাউনলোড করে নিন।</span></p>
       </div>
       <span class="badge pos">Settled</span>
     </div>
@@ -889,10 +981,14 @@ function renderFinalSettlementCard(snap, onlyMember) {
         </tr>`;
       }).join('')}
     </table>
+    <div class="flex no-print" style="margin-top:12px">
+      <button class="btn" style="margin:0" onclick="downloadSettlementCSV(window._lastRenderedSnap, ${onlyMember ? `'${esc(onlyMember)}'` : 'null'})">⬇️ Download Report (CSV)</button>
+      <button class="btn sec" style="margin:0" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
   </div>`;
 }
 
-// ---------- Past Reports Tab (Archived Past Months) ----------
+// ---------- Past Reports Tab (Archived Past Months + Download) ----------
 async function vPast() {
   let liveRep = null;
   try { liveRep = await rc('report', U, P, TOK); } catch (e) {}
@@ -900,16 +996,17 @@ async function vPast() {
   if (!list.length) {
     return wrap(`<div class="card empty">
       <h2>Past Reports / আগের মাসের রিপোর্ট</h2>
-      <p>No closed past month reports saved yet. When the manager ends a mess cycle, its complete report is archived here.</p>
+      <p>No closed past month reports saved yet. When the manager ends a mess cycle, its complete report is archived here for download.</p>
       ${ROLE === 'M' && liveRep && liveRep.ok ? `<button class="btn" onclick="closeMessNow()">End Current Mess & Archive Report</button>` : ''}
     </div>`);
   }
   if (!list[SELECTED_PAST_IDX]) SELECTED_PAST_IDX = 0;
   const curSnap = list[SELECTED_PAST_IDX];
+  window._curPastSnap = curSnap;
 
   const selectorCard = `<div class="card">
     <h2>Past Reports / আগের মাসের রিপোর্ট</h2>
-    <p class="sub">Select a closed mess cycle to view its complete report.<span class="bn-note">শেষ হয়ে যাওয়া মাসের পূর্ণ রিপোর্ট দেখুন।</span></p>
+    <p class="sub">Select a closed mess cycle to view or download its report.<span class="bn-note">শেষ হয়ে যাওয়া মাসের পূর্ণ রিপোর্ট দেখুন ও ডাউনলোড করুন।</span></p>
     <div class="optbar" style="padding-bottom:0">
       ${list.map((s, idx) => `<button class="optbtn ${idx === SELECTED_PAST_IDX ? 'on' : ''}" onclick="SELECTED_PAST_IDX=${idx};vPast()">${fmt(s.periodStart)} – ${fmt(s.periodEnd)}</button>`).join('')}
     </div>
@@ -950,6 +1047,10 @@ async function vPast() {
         }).join('')}
       </table>
     </div>
+    <div class="flex no-print" style="margin-top:12px">
+      <button class="btn" style="margin:0" onclick="downloadSettlementCSV(window._curPastSnap, ${ROLE === 'M' ? 'null' : `'${esc(U)}'`})">⬇️ Download Report (CSV)</button>
+      <button class="btn sec" style="margin:0" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
   </div>`;
 
   wrap(selectorCard + detailCard);
@@ -970,7 +1071,7 @@ function detail(i) {
   const advList = (ME.adv || []).filter(a => a[1] === n || ROLE === 'M');
   const advRows = advList.length
     ? advList.map(a => `<tr><td>${esc(a[4] || 'Advance Request')} (Due ${fmt(a[3])})</td><td>${tk(a[2])} · <span class="badge ${a[5] === 'Paid' ? 'pos' : 'warn'}">${esc(a[5] || 'Open')}</span></td></tr>`).join('')
-    : `<tr><td>Advance Status</td><td>${x.advDue > 0 ? `<span class="badge warn">Pending ${tk(x.advDue)}</span>` : '<span class="badge gray">No pending advance</span>'}</td></tr>`;
+    : `<tr><td>Advance Status</td><td>${x.due > 0 ? `<span class="badge warn">Due ${tk(x.due)}</span>` : '<span class="badge gray">No pending advance</span>'}</td></tr>`;
 
   const bazarDaysBoard = (D.bazarSummary || []).length
     ? `<div class="rep-sec"><h4>Bazar Days by All Members / কে কয়দিন বাজার করেছে</h4>
@@ -1021,7 +1122,8 @@ function detail(i) {
 
     <div class="flex no-print" style="margin-top:14px">
       <button class="btn" style="margin:0" onclick="share(${i})">Copy Summary</button>
-      <button class="btn sec" style="margin:0" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn sec" style="margin:0" onclick="downloadCurrentReportCSV()">⬇️ Download CSV</button>
+      <button class="btn sec" style="margin:0" onclick="window.print()">Print / PDF</button>
     </div>
   </div>`;
 }
@@ -1040,7 +1142,7 @@ function share(i) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Summary copied to clipboard')).catch(() => prompt('Copy this summary:', t));
 }
 
-// ---------- Contacts Directory & Extra Contacts Setup (Electrician, etc.) ----------
+// ---------- Contacts Directory & Contacts Setup (Manager & Buwa moved here from Settings) ----------
 async function vDir() {
   let l = null;
   try {
@@ -1069,8 +1171,8 @@ async function vDir() {
   })));
 
   const setupCard = ROLE === 'M' ? `<div class="card">
-    <h3>⚙️ Contacts Setup (Manager, Buwa & Extra Staff)</h3>
-    <p class="sub">Manage Manager, Buwa, and add Electrician or any other contact.<span class="bn-note">ম্যানেজার ও বুয়ার পাশাপাশি ইলেকট্রিশিয়ান বা অন্য যেকোনো কন্ট্যাক্ট যুক্ত করুন।</span></p>
+    <h3>⚙️ Contacts Setup (Manager & Buwa)</h3>
+    <p class="sub">Set Manager and Buwa (Cook) contact numbers, or add extra staff.<span class="bn-note">ম্যানেজার ও বুয়ার নাম্বার এখান থেকে সেট বা পরিবর্তন করুন।</span></p>
     <label>Manager Name</label><input id="cmn" value="${esc((l && l.cfg && l.cfg.ManagerName) || c.managerName || 'Mess Manager')}">
     <label>Manager Mobile Number</label><input id="cmp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc((l && l.cfg && l.cfg.ManagerPhone) || c.managerPhone || '')}">
     <label>Buwa / Cook Mobile Number (বুয়ার নাম্বার)</label><input id="ccp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc((l && l.cfg && l.cfg.CookPhone) || c.cookPhone || '')}">
@@ -1091,7 +1193,7 @@ async function vDir() {
   wrap(`
     <div class="card">
       <h2>Contacts / যোগাযোগের তালিকা</h2>
-      <p class="sub">Manager, Buwa (Cook), Extra Contacts (Electrician, etc.), and Members.<span class="bn-note">ম্যানেজার, বুয়া, ইলেকট্রিশিয়ান/অন্যান্য কন্ট্যাক্ট এবং মেম্বারদের তালিকা।</span></p>
+      <p class="sub">Manager, Buwa (Cook), Extra Contacts, and Members.<span class="bn-note">ম্যানেজার, বুয়া ও মেম্বারদের যোগাযোগের নাম্বার।</span></p>
       <table>
         ${baseRows.map(item => `<tr>
           <td><b>${esc(item.name)}</b><br><small style="color:var(--m)">${esc(item.roleLabel)}</small></td>
@@ -1163,10 +1265,114 @@ async function vLogs(bar) {
 const del = (s, id) => confirm('Delete this entry?') && M('del', {sheet: s, id: id}).then(() => { toast('Deleted'); vEnt(); }).catch(err);
 
 function vDB() {
-  const bar = `<div class="card"><h2>Duty & Bills / ডিউটি, বিল ও অ্যাডভান্স</h2><div class="optbar" style="padding-bottom:0">${[['duty', '📋 Bazar Duty'], ['bill', '🧾 Fixed Bills'], ['adv', '💰 Advance']].map(x => `<button class="optbtn ${DB_MODE === x[0] ? 'on' : ''}" onclick="DB_MODE='${x[0]}';vDB()">${x[1]}</button>`).join('')}</div></div>`;
+  const bar = `<div class="card"><h2>Duty, Bills & Dues / ডিউটি, বিল ও বকেয়া</h2><div class="optbar" style="padding-bottom:0">${[['duty', '📋 Bazar Duty'], ['dues', '⚠️ Dues & Advance'], ['bill', '🧾 Fixed Bills'], ['adv', '💰 Request Advance']].map(x => `<button class="optbtn ${DB_MODE === x[0] ? 'on' : ''}" onclick="DB_MODE='${x[0]}';vDB()">${x[1]}</button>`).join('')}</div></div>`;
+  if (DB_MODE === 'dues') return vDuesBoard(bar);
   if (DB_MODE === 'bill') return vBill(bar);
   if (DB_MODE === 'adv') return vAdv(bar);
   return vDuty(bar);
+}
+
+// ---------- NEW: Manager Dues, Previous Advance & Freeze Notice Section ----------
+async function vDuesBoard(bar = '') {
+  let rep, l;
+  try {
+    [rep, l] = await Promise.all([rc('report', U, P, TOK), M('lists')]);
+  } catch (e) { return err(e); }
+  rep = applyCarryForwardToReport(rep);
+  const t = ME.today || I.today;
+  const graceRows = (l && l.grace) || [];
+
+  if (!rep || !rep.ok || !rep.m) {
+    return wrap(`${bar}<div class="card empty"><h2>Dues & Previous Advance</h2><p>Start a mess cycle first to inspect member dues and advances.</p></div>`);
+  }
+
+  const members = Object.keys(rep.m);
+  const dueList = [];
+  const advList = [];
+
+  members.forEach(name => {
+    const x = rep.m[name];
+    const gEntry = graceRows.filter(g => g[0] === name).slice(-1)[0];
+    const noticeDaysLeft = gEntry && gEntry[2] >= t ? dayGap(t, gEntry[2]) : null;
+    if (x.bal < 0 || x.due > 0) {
+      dueList.push({
+        name,
+        dueAmt: Math.abs(x.bal < 0 ? x.bal : x.due),
+        prevOpen: x.open,
+        blocked: x.blocked,
+        graceUntil: gEntry ? gEntry[2] : '',
+        noticeDaysLeft
+      });
+    } else {
+      advList.push({
+        name,
+        advAmt: x.bal,
+        prevOpen: x.open
+      });
+    }
+  });
+
+  const duesHtml = dueList.length
+    ? dueList.map(item => {
+        const freezeInfo = item.blocked
+          ? `<span class="badge neg">Account Frozen (মিল বন্ধ)</span>`
+          : item.noticeDaysLeft !== null
+            ? `<span class="badge warn">Notice: ${item.noticeDaysLeft} day(s) left · Freezes after ${fmt(item.graceUntil)}</span>`
+            : `<span class="badge gray">No notice days set (Immediate freeze risk)</span>`;
+
+        return `<div class="row" style="cursor:default;flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1;min-width:210px">
+            <b>${esc(item.name)}</b> — <b style="color:#dc2626">Due: −${tk(item.dueAmt)}</b>
+            <small>Previous Opening: ${item.prevOpen >= 0 ? '+' : '−'}${tk(Math.abs(item.prevOpen || 0))}</small>
+            <div style="margin-top:5px">${freezeInfo}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex:0 0 auto;margin-top:4px">
+            <select id="gr_days_${esc(item.name)}" style="width:auto;padding:6px 8px;font-size:12.5px">
+              <option value="1">1 Day Notice</option>
+              <option value="2">2 Days Notice</option>
+              <option value="3" selected>3 Days Notice</option>
+              <option value="5">5 Days Notice</option>
+              <option value="7">7 Days Notice</option>
+              <option value="0">Freeze Now (0d)</option>
+            </select>
+            <button class="btn sm" onclick="setMemberGraceDays('${esc(item.name)}')">Apply</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty">No member has unpaid dues right now 🎉</div>';
+
+  const advHtml = advList.length
+    ? advList.map(item => `<div class="row" style="cursor:default">
+        <div>
+          <b>${esc(item.name)}</b>
+          <small>Previous Opening: ${item.prevOpen >= 0 ? '+' : '−'}${tk(Math.abs(item.prevOpen || 0))}</small>
+        </div>
+        <span class="badge pos">Advance: +${tk(item.advAmt)}</span>
+      </div>`).join('')
+    : '<div class="empty">No members with positive advance balance</div>';
+
+  wrap(`${bar}
+    <div class="card">
+      <h2>⚠️ Dues & Freeze Notice Control / বকেয়া ও ফ্রিজ নোটিশ</h2>
+      <p class="sub">Members with unpaid dues, notice countdown days, and auto-freeze status.<span class="bn-note">কার কাছে কত টাকা বকেয়া আছে, কয়দিনের নোটিশ দেওয়া হয়েছে এবং কতদিন পর অ্যাকাউন্ট ফ্রিজ হবে তা নির্ধারণ করুন।</span></p>
+      ${duesHtml}
+    </div>
+    <div class="card">
+      <h3>✅ Members with Advance Balance / যাদের অ্যাডভান্স জমা আছে</h3>
+      <p class="sub">Positive balance (+) available for upcoming meals.<span class="bn-note">যাদের অ্যাকাউন্টে অ্যাডভান্স টাকা জমা আছে।</span></p>
+      ${advHtml}
+    </div>
+  `);
+}
+
+function setMemberGraceDays(memberName) {
+  const el = document.getElementById('gr_days_' + memberName);
+  const days = el ? Number(el.value) : 0;
+  M('graceSet', { member: memberName, days }).then(() => {
+    toast(days > 0 ? `${memberName}: ${days} day(s) notice set before freeze` : `${memberName}: Freeze applied immediately`);
+    VC = {};
+    vDuesBoard(`<div class="card"><h2>Duty, Bills & Dues / ডিউটি, বিল ও বকেয়া</h2><div class="optbar" style="padding-bottom:0">${[['duty', '📋 Bazar Duty'], ['dues', '⚠️ Dues & Advance'], ['bill', '🧾 Fixed Bills'], ['adv', '💰 Request Advance']].map(x => `<button class="optbtn ${DB_MODE === x[0] ? 'on' : ''}" onclick="DB_MODE='${x[0]}';vDB()">${x[1]}</button>`).join('')}</div></div>`);
+  }).catch(err);
 }
 
 function vNC() {
@@ -1174,7 +1380,7 @@ function vNC() {
   return vAnn(bar, window._ncMode || 'nt');
 }
 
-// ---------- Dedicated Members Tab (With Advanced Section + Carry Balance View) ----------
+// ---------- Dedicated Members Tab ----------
 async function vMem() {
   let l, rep;
   try {
@@ -1221,7 +1427,7 @@ async function vMem() {
       </div>` : ''}
       <div class="flex" style="margin-top:10px">
         <button class="btn sm sec" onclick="toggleMemActive(${SEL_MEM_IDX})">${selRow[2] === 'Yes' ? 'Set Inactive' : 'Set Active'}</button>
-        <button class="btn sm sec" onclick="DB_MODE='adv';go('db')">Send Advance</button>
+        <button class="btn sm sec" onclick="DB_MODE='dues';go('db')">Dues & Freeze</button>
         <button class="btn sm" onclick="MGR_DETAIL_IDX=${rep && rep.ok && rep.m ? Object.keys(rep.m).indexOf(selRow[0]) : -1};if(MGR_DETAIL_IDX>=0)go('rep');else toast('No report data yet',1)">Full Statement</button>
       </div>
     </div>` : ''}
@@ -1270,27 +1476,27 @@ async function vBill(bar = '') {
 }
 const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
 
-// ---------- Dedicated Settings Tab (Contacts Setup Moved to Contacts Tab) ----------
+// ---------- Dedicated Settings Tab (Contacts Setup Removed — Moved to Contacts Tab) ----------
 async function vSet() {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   const c = l.cfg, k = l.rules;
   wrap(`
   <div class="card"><h2>Meal-Off Time Rules / মিল বন্ধের সময় নির্ধারণ</h2>
-    <p class="sub">Change cutoff times for today's lunch, today's dinner, and tomorrow's lunch.<span class="bn-note">ম্যানেজার চাইলে যেকোনো সময় মিল বন্ধের কাট-অফ সময় পরিবর্তন করতে পারবেন।</span></p>
-    <label>Today's Lunch Cutoff (আজকের লাঞ্চ বন্ধের শেষ সময়)</label><input type="time" id="cl" value="${k.lunch}">
+    <p class="sub">Running day Lunch is cooked at 5 AM (must notify the night before). Running day Dinner can be turned off before the Dinner cutoff.<span class="bn-note">চলতি দিনের লাঞ্চ ভোর ৫টায় রান্না হয় (আগের রাতে জানাতে হবে) এবং ডিনার বিকেলের কাট-অফ সময়ের আগে বন্ধ করা যাবে।</span></p>
     <label>Today's Dinner Cutoff (আজকের ডিনার বন্ধের শেষ সময়)</label><input type="time" id="cd" value="${k.dinner}">
     <label>Tomorrow's Lunch Cutoff Tonight (আগামীকালের লাঞ্চ আজ রাতে বন্ধের শেষ সময়)</label><input type="time" id="cnl" value="${k.nextLunch}">
+    <input type="hidden" id="cl" value="${k.lunch}">
     <button class="btn" onclick="svCuts()">Save Time Rules</button>
   </div>
 
   <div class="card"><h3>Mess Cycle & End Settlement</h3>
     <div class="tiles"><div class="tile"><span>Start Date</span><b style="font-size:15px">${c.Start ? fmt(c.Start) : 'Not started'}</b></div><div class="tile"><span>End Date</span><b style="font-size:15px">${c.End ? fmt(c.End) : 'Running'}</b></div></div>
     <label>Start Date</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">Start Mess</button>
-    <label>End / Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="closeMessNow('mend')">End Mess & Final Report</button>
+    <label>End / Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="closeMessNow('mend')">End Mess & Clear Bazar/Notices</button>
   </div>
 
   <div class="card"><h3>New Month & Archive</h3>
-    <p class="sub">Saves current month report to Past Reports, carries (+/−) balances forward, and resets notices & cycle data.<span class="bn-note">বর্তমান মাসের রিপোর্ট Past Reports-এ জমা রেখে (+/−) ব্যালেন্স পরের মাসে নেওয়া হবে এবং বাকি সব রিসেট হবে।</span></p>
+    <p class="sub">Saves current month report to Past Reports, carries (+/−) balances forward, and resets notices & schedules.<span class="bn-note">বর্তমান মাসের রিপোর্ট Past Reports-এ জমা রেখে (+/−) ব্যালেন্স পরের মাসে নেওয়া হবে এবং বাকি সব রিসেট হবে।</span></p>
     <button class="btn sec" onclick="nm()">Start New Month</button>
     <button class="btn sec" onclick="M('sheets').then(()=>toast('Report sheets updated')).catch(err)">Sync Report Sheets</button>
   </div>
@@ -1303,33 +1509,34 @@ async function vSet() {
 
 async function closeMessNow(dateInputId) {
   const dtVal = (dateInputId && $('#' + dateInputId) && $('#' + dateInputId).value) || I.today;
-  if (!confirm('End mess now? Current report will be saved to Past Reports, final (+/−) balances will carry forward, and notices will be cleared.')) return;
+  if (!confirm('End mess now? Bazar schedules and all notices will be cleared, and final money reports will be ready for download.')) return;
   try {
     const rawRep = await rc('report', U, P, TOK).catch(() => null);
     archiveCurrentCycleSnapshot(rawRep, dtVal);
     await M('close', {date: dtVal});
-    toast('Mess ended! Final settlement & carry-forward balances updated.');
+    I.end = dtVal;
+    toast('Mess ended! Bazar schedules & notices cleared. Final report ready for download.');
     VC = {};
     go('rep');
   } catch (e) {
-    // Even if backend already closed or has no active sheet, keep local snapshot & final report ready
     archiveCurrentCycleSnapshot(D, dtVal);
+    I.end = dtVal;
     toast('Mess settlement saved & notices cleared.');
     VC = {};
     go('rep');
   }
 }
 
-const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vSet(); }).catch(err);
+const mm = (a, id) => M(a, {date: $('#' + id).value}).then(async () => { I = stamp(await run('init')); toast('Updated'); vSet(); }).catch(err);
 const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Time rules updated'); I = stamp(await run('init')); vSet(); }).catch(err);
 const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
 const nm = () => {
   if (!confirm('Archive current month to Past Reports, carry (+/−) balances forward, and start a new month?')) return;
   archiveCurrentCycleSnapshot(D, I.today);
-  M('newMonth').then(() => { toast('New month started. Report archived & balances carried forward.'); VC = {}; go('rep'); }).catch(err);
+  M('newMonth').then(async () => { I = stamp(await run('init')); toast('New month started. Report archived & balances carried forward.'); VC = {}; go('rep'); }).catch(err);
 };
 
-// ---------- Live Notifications, Notices & Advance Settlement Hide ----------
+// ---------- Live Notifications, Notices & Auto-Hide After Bazar / Mess End ----------
 let DIS = {}, pollT, lastPend = null, lastSt = null;
 const seenKey = () => 'mess_seen_' + U;
 const disKey = () => 'mess_dis_nt_' + U;
@@ -1398,9 +1605,11 @@ function startPoll() {
           }
         });
         lastSt = s;
-        if (newIds(ME.adv, m.adv)) { toast('💰 Manager requested an advance / bazar payment'); shouldShowModal = true; }
-        if (newIds(ME.mo, m.mo)) { toast('🔕 New mess closure announced'); shouldShowModal = true; }
-        if (newIds(ME.nt, m.nt)) { toast('📢 New notice from Manager'); shouldShowModal = true; }
+        if (!m.messEnded) {
+          if (newIds(ME.adv, m.adv)) { toast('💰 Manager requested an advance / bazar payment'); shouldShowModal = true; }
+          if (newIds(ME.mo, m.mo)) { toast('🔕 New mess closure announced'); shouldShowModal = true; }
+          if (newIds(ME.nt, m.nt)) { toast('📢 New notice from Manager'); shouldShowModal = true; }
+        }
         ME = m;
         VC['me' + JSON.stringify([U, P, TOK])] = m;
         renderAlerts();
@@ -1422,6 +1631,9 @@ const moTxt = m => {
 function notices() {
   const n = [], t = ME.today || I.today;
   if (ROLE !== 'U') return n;
+  // When mess ends, clear all Bazar Duty notices and announcements — keep only money accounts
+  if (ME.messEnded || !I.start || I.end) return n;
+
   const disSaved = getDisNt();
   const paidAdv = getPaidAdv();
 
@@ -1431,13 +1643,14 @@ function notices() {
     n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('req','pay')", html: `<b>Payment Warning:</b> Please pay ${tk(ME.due)} by ${fmt(ME.graceUntil)} to avoid account freeze.<span class="bn-sub">সতর্কতা: ${fmt(ME.graceUntil)}-এর মধ্যে ${tk(ME.due)} পরিশোধ করুন।</span>`});
   }
 
-  (ME.duties || []).filter(d => d[1] === U && d[3] >= t).forEach(d => {
+  // Only show Bazar Duty Notice if duty is active/upcoming AND bazar is NOT yet completed (daysDone === 0)
+  (ME.duties || []).filter(d => d[1] === U && d[3] >= t && Number(d[4] || 0) === 0).forEach(d => {
     const st = dutyStatusInfo(d, t), range = fmt(d[2]) + ' to ' + fmt(d[3]);
     const lvl = st.state === 'running' || dayGap(t, d[2]) <= 1 ? 'red' : 'warn';
     n.push({
       k: 'duty_' + d[0],
       lvl: lvl,
-      html: `<b>🛒 Bazar Duty Notice:</b> ${esc(st.detail)} (${range}).<span class="bn-sub">আপনার বাজারের সময়: ${range} (${esc(st.detail)})</span>`
+      html: `<b>🛒 Bazar Duty Notice:</b> ${esc(st.detail)} (${range}).<span class="bn-sub">আপনার বাজারের সময়: ${range} (${esc(st.detail)}) — বাজার শেষ হলে নোটিশ অটো চলে যাবে।</span>`
     });
   });
 
@@ -1517,7 +1730,7 @@ function closeModal(goReq) {
   if (goReq) go('req');
 }
 
-// ---------- Member: Requests (Advance Instead of Submit Payment Info, All Notices Removed) ----------
+// ---------- Member: Requests ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vReq() {
   let rep = null;
@@ -1629,7 +1842,7 @@ const rqPay = (id, ok) => {
   }
   const rqRow = (RQ.reqs || []).find(x => x[0] === id);
   M('decide', {id, ok, amount: ok ? $('#ra_' + id).value : 0, reason}).then(() => {
-    if (ok && rqRow && rqRow[6] && String(rqRow[6]).startsWith('ADV')) addPaidAdv(String(rqRow[6]));
+    if (ok && rqRow && rqRow[10]) addPaidAdv(String(rqRow[10]));
     toast(ok ? 'Advance approved' : 'Request rejected'); vMgrReq();
   }).catch(err);
 };
@@ -1652,7 +1865,7 @@ const rqGen = (id, ok) => {
   M('decide', {id, ok, reply: ok ? $('#rr_' + id).value.trim() : '', reason}).then(() => { toast(ok ? 'Request approved' : 'Request rejected'); vMgrReq(); }).catch(err);
 };
 
-// ---------- Improved Bazar Duty System ----------
+// ---------- Bazar Duty System ----------
 function applyDutyPreset(baseDate, spanDays, btnEl) {
   const fEl = $('#df'), tEl = $('#dt');
   if (!fEl || !tEl) return;
@@ -1697,6 +1910,13 @@ async function vDuty(bar = '') {
     [ME, rep] = await Promise.all([rc('me', U, P, TOK), ROLE === 'M' ? rc('report', U, P, TOK).catch(() => null) : Promise.resolve(null)]);
   } catch (e) { return err(e); }
   renderAlerts();
+  if (ME.messEnded || !I.start || I.end) {
+    return wrap(`${bar}<div class="card empty">
+      <h2>Bazar Duty Schedule</h2>
+      <p>Mess cycle has ended, so all bazar schedules and notices are cleared. Only money accounts remain.</p>
+      <button class="btn" onclick="go('rep')">Go to Report</button>
+    </div>`);
+  }
   const t = ME.today || I.today, l = ME.duties || [];
 
   let mgrAssignCard = '';
@@ -1767,7 +1987,7 @@ const dutyAdd = () => {
 };
 const dutyDel = id => confirm('Remove this duty?') && M('dutyDel', {id}).then(() => { toast('Removed'); VIEWS[CUR](); }).catch(err);
 
-// ---------- Advance / Bazar Money Requests (Disappears Once Paid/Settled) ----------
+// ---------- Advance / Bazar Money Requests ----------
 function payAdv(id) {
   const a = (ME.adv || []).find(x => x[0] === id); if (!a) return toast('This request is no longer open', 1);
   PRE = {amount: a[1], ref: id, note: a[3] ? `Advance (${a[3]})` : 'Advance'}; go('req', 'pay');
@@ -1806,7 +2026,7 @@ const advAct = (a, id) => {
   }).catch(err);
 };
 
-// ---------- Notices (Flexible Duration / Days Set by Manager) & Mess Closure ----------
+// ---------- Notices & Mess Closure ----------
 function syncCustomNoticeDays() {
   const sel = $('#nt_d'), box = $('#nt_custom_box');
   if (!sel || !box) return;
