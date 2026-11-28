@@ -248,7 +248,95 @@ const stamp = d => (d.t0 = Date.now(), d);
 
 let U, P, TOK, ROLE, I, NAMES = [], D, LM, ME = {duties: [], nt: [], mo: [], adv: [], mine: []};
 let VC = {}, CUR = '', PRE = null, MIDS = [], RQ = {reqs: [], signups: []};
-let ENT_MODE = 'dep', DB_MODE = 'duty', SHOW_MY_DETAIL = false, MGR_DETAIL_IDX = null, SEL_MEM_IDX = 0;
+let ENT_MODE = 'dep', DB_MODE = 'duty', SHOW_MY_DETAIL = false, MGR_DETAIL_IDX = null, SEL_MEM_IDX = 0, SELECTED_PAST_IDX = 0;
+
+// ---------- Cycle Archive, Carry-Forward Balances & Reset Helpers ----------
+const ARCH_KEY = 'mess_archived_cycles_v1';
+const CF_KEY = 'mess_carry_balances_v1';
+const EXTRA_CONT_KEY = 'mess_extra_contacts_v1';
+const FINAL_SETTLE_KEY = 'mess_final_settlement_v1';
+
+const getArchived = () => { try { return JSON.parse(localStorage.getItem(ARCH_KEY) || '[]'); } catch (e) { return []; } };
+const saveArchived = list => { try { localStorage.setItem(ARCH_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {} };
+const getCarryMap = () => { try { return JSON.parse(localStorage.getItem(CF_KEY) || '{}'); } catch (e) { return {}; } };
+const saveCarryMap = map => { try { localStorage.setItem(CF_KEY, JSON.stringify(map || {})); } catch (e) {} };
+const getExtraContacts = () => { try { return JSON.parse(localStorage.getItem(EXTRA_CONT_KEY) || '[]'); } catch (e) { return []; } };
+const saveExtraContacts = list => { try { localStorage.setItem(EXTRA_CONT_KEY, JSON.stringify(list || [])); } catch (e) {} };
+const getFinalSettle = () => { try { return JSON.parse(localStorage.getItem(FINAL_SETTLE_KEY) || 'null'); } catch (e) { return null; } };
+const saveFinalSettle = obj => { try { localStorage.setItem(FINAL_SETTLE_KEY, JSON.stringify(obj || null)); } catch (e) {} };
+
+function applyCarryForwardToReport(repData) {
+  if (!repData || !repData.ok || !repData.m) return repData;
+  const cf = getCarryMap();
+  const keys = Object.keys(cf);
+  if (!keys.length) return repData;
+  const clone = JSON.parse(JSON.stringify(repData));
+  Object.keys(clone.m).forEach(name => {
+    if (cf[name] !== undefined && Number(cf[name]) !== 0) {
+      const prevOpen = Number(clone.m[name].open || 0);
+      const extra = Number(cf[name]);
+      clone.m[name].open = prevOpen + extra;
+      clone.m[name].bal = Number(clone.m[name].bal || 0) + extra;
+      clone.m[name].due = clone.m[name].bal < 0 ? Math.abs(clone.m[name].bal) : 0;
+    }
+  });
+  return clone;
+}
+
+function archiveCurrentCycleSnapshot(repData, closeDateLabel) {
+  if (!repData || !repData.ok || !repData.m) return null;
+  const membersSnap = {};
+  const carryUpdates = getCarryMap();
+  Object.keys(repData.m).forEach(n => {
+    const x = repData.m[n];
+    membersSnap[n] = {
+      meals: Number(x.meals || 0),
+      guest: Number(x.guest || 0),
+      mealCost: Number(x.mealCost || 0),
+      share: Number(x.share || 0),
+      dep: Number(x.dep || 0),
+      bazar: Number(x.bazar || 0),
+      bazarDays: (x.bl || []).length,
+      open: Number(x.open || 0),
+      bal: Number(x.bal || 0)
+    };
+    // Carry forward net (+ / -) balance to next month
+    carryUpdates[n] = Number(x.bal || 0);
+  });
+  saveCarryMap(carryUpdates);
+
+  const snap = {
+    id: 'CYC_' + Date.now(),
+    closedAt: new Date().toISOString().slice(0, 10),
+    periodStart: repData.cfg && repData.cfg.Start ? repData.cfg.Start : '',
+    periodEnd: closeDateLabel || (repData.cfg && repData.cfg.End ? repData.cfg.End : I.today),
+    days: repData.days || 0,
+    tb: Number(repData.tb || 0),
+    tm: Number(repData.tm || 0),
+    rate: Number(repData.rate || 0),
+    fixed: Number(repData.fixed || 0),
+    td: Number(repData.td || 0),
+    cnt: Number(repData.cnt || Object.keys(membersSnap).length),
+    members: membersSnap
+  };
+
+  const arch = getArchived();
+  arch.unshift(snap);
+  saveArchived(arch);
+  saveFinalSettle(snap);
+  SELECTED_PAST_IDX = 0;
+
+  // Clear all local notices, closures, duty banners, and seen modal flags on mess end
+  if (U) {
+    try {
+      localStorage.removeItem('mess_dis_nt_' + U);
+      localStorage.removeItem('mess_seen_' + U);
+      localStorage.removeItem('mess_paid_adv_' + U);
+    } catch (e) {}
+  }
+  DIS = {};
+  return snap;
+}
 
 // ---------- Auth & Session ----------
 const SK = 'mess_sess_v3';
@@ -286,9 +374,10 @@ function doLogin(u, p, tok, silent) {
   U = u; P = p; TOK = tok;
   return run('boot', U, P, TOK).then(b => {
     ROLE = b.role; TOK = b.token || TOK; I = stamp(b.init); ME = b.me; VC = {};
-    SHOW_MY_DETAIL = false; MGR_DETAIL_IDX = null; SEL_MEM_IDX = 0;
+    SHOW_MY_DETAIL = false; MGR_DETAIL_IDX = null; SEL_MEM_IDX = 0; SELECTED_PAST_IDX = 0;
+    const patchedRep = applyCarryForwardToReport(b.rep);
     VC['me' + JSON.stringify([U, P, TOK])] = b.me;
-    VC['report' + JSON.stringify([U, P, TOK])] = b.rep;
+    VC['report' + JSON.stringify([U, P, TOK])] = patchedRep;
     $('#me').textContent = ROLE === 'M' ? 'Mess Manager' : U;
     $('#out').style.display = '';
     saveSess(); buildTabs(); afterLogin(); go('rep');
@@ -317,11 +406,12 @@ function signReview() {
   $('#sc').onclick = () => run('signup', n, p, ph).then(() => wrap(`<div class="card empty"><h2>Request Sent ✅</h2><p>Please wait for the manager to approve your account. Once approved, log in with your name and PIN.</p><button class="btn" onclick="start()">Back to Log in</button></div>`)).catch(err);
 }
 
-// ---------- Tabs (Separate Members & Settings Tabs for Manager + All Notice) ----------
+// ---------- Tabs ----------
 function buildTabs() {
   const t = ROLE === 'M'
     ? [
         ['rep', 'Report'],
+        ['past', 'Past Reports'],
         ['act', 'Activity Board'],
         ['req', 'Requests'],
         ['ent', 'Entries'],
@@ -329,11 +419,11 @@ function buildTabs() {
         ['nc', 'Notices & Close'],
         ['mem', 'Members'],
         ['set', 'Settings'],
-        ['dir', 'Contacts'],
-        ['allnt', 'All Notice', true]
+        ['dir', 'Contacts']
       ]
     : [
         ['rep', 'Report'],
+        ['past', 'Past Reports'],
         ['act', 'Activity Board'],
         ['today', "Today's Meals"],
         ['off', 'Meal Off'],
@@ -341,8 +431,7 @@ function buildTabs() {
         ['baz', 'Bazar'],
         ['duty', 'Duty'],
         ['req', 'Requests'],
-        ['dir', 'Contacts'],
-        ['allnt', 'All Notice', true]
+        ['dir', 'Contacts']
       ];
   $('#tabs').style.display = '';
   $('#tabs').innerHTML = t.map(x => `<button id="t_${x[0]}" class="${x[2] ? 'nt-tab' : ''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
@@ -397,9 +486,8 @@ const PAGE_RULES = {
     body: () => `<div>
       • <b>Meal Rate:</b> Total Bazar Expense ÷ Total Meals (Regular + Guest meals).<br>
       • <b>Fixed Bills:</b> Divided equally among all active members.<br>
-      • <b>Balance:</b> (Opening Balance + Deposits + Bazar Spent) − (Meal Cost + Fixed Bill Share). Positive (+) means Receivable (পাবেন); Negative (−) means Payable (দিবেন).<br>
-      • <b>Privacy:</b> Members can view their own report and details; managers can view all members.<br>
-      <span class="bn-sub">মিল রেট = মোট বাজার ÷ মোট মিল। ফিক্সড বিল সক্রিয় মেম্বারদের মাঝে সমানভাবে ভাগ হয়। জমার সাথে বাজার ও আগের ব্যালেন্স যোগ হয়ে খরচ বাদ দিলে নিট পাওনা বা দেনা হিসাব হয়।</span>
+      • <b>Balance & Carry Forward:</b> (Opening/Carry Balance + Deposits + Bazar Spent) − (Meal Cost + Fixed Bill Share). Positive (+) means Receivable (পাবেন); Negative (−) means Payable (দিবেন). When a month closes, each member's (+/−) balance carries forward into the next month's advance.<br>
+      <span class="bn-sub">মিল রেট = মোট বাজার ÷ মোট মিল। ফিক্সড বিল সক্রিয় মেম্বারদের মাঝে সমানভাবে ভাগ হয়। মাস শেষ হলে সবার (+/−) ব্যালেন্স পরের মাসের অ্যাডভান্সে যুক্ত হয়।</span>
     </div>`
   },
   bazar: {
@@ -421,12 +509,12 @@ const PAGE_RULES = {
     </div>`
   },
   req: {
-    title: 'Payment, Grace & Request Rules / পেমেন্ট ও রিকোয়েস্টের নিয়ম',
+    title: 'Advance & Request Rules / অ্যাডভান্স ও রিকোয়েস্টের নিয়ম',
     body: () => `<div>
-      • <b>Payments:</b> Submit payment details after paying; balance updates once approved by the manager.<br>
+      • <b>Advance:</b> Submit your advance payment details; if you had −৳20 previous balance, ৳20 adjusts first and the rest counts as advance; if you had +৳20, it adds to your advance.<br>
       • <b>Unpaid Dues & Freeze:</b> Unpaid dues after deadline or grace period may freeze meals until paid or grace is approved.<br>
       • <b>Requests:</b> Submit general requests or grace requests clearly; rejected requests include the manager's reason.<br>
-      <span class="bn-sub">টাকা দেওয়ার পর পেমেন্ট রিকোয়েস্ট পাঠান। বকেয়া থাকলে ওয়ার্নিং/ফ্রিজ হতে পারে; প্রয়োজনে গ্রেস পিরিয়ড বা সাধারণ রিকোয়েস্ট পাঠাতে পারবেন।</span>
+      <span class="bn-sub">অ্যাডভান্স দিলে আগের বকেয়া বা পাওনা অনুযায়ী স্বয়ংক্রিয়ভাবে হিসাব সমন্বয় হবে।</span>
     </div>`
   },
   guest: {
@@ -683,16 +771,24 @@ async function vAct() {
   `);
 }
 
-// ---------- Report (Today's Meals Removed) ----------
+// ---------- Report (Includes Pre-Close Dues/Surplus Preview + Post-Close Final Settlement Banner) ----------
 async function vRep() {
   let d; try { d = await rc('report', U, P, TOK); } catch (e) { return err(e); }
+  d = applyCarryForwardToReport(d);
   D = d;
-  if (!d.ok) return wrap('<div class="card empty"><h2>Mess Not Started</h2><p>The manager has not started the mess cycle yet.</p></div>');
+  const finalSettle = getFinalSettle();
+
+  if (!d.ok) {
+    const settleCard = finalSettle ? renderFinalSettlementCard(finalSettle, ROLE === 'M' ? null : U) : '';
+    return wrap(`${settleCard}<div class="card empty"><h2>Mess Not Started</h2><p>Start a new mess cycle or check Past Reports for closed months.</p>${finalSettle ? `<button class="btn" onclick="go('past')">View Past Reports</button>` : ''}</div>`);
+  }
   NAMES = Object.keys(d.m);
 
   if (ROLE === 'M' && MGR_DETAIL_IDX !== null && NAMES[MGR_DETAIL_IDX] !== undefined) {
     return wrap(`<button class="btn sec sm no-print" style="margin-bottom:12px" onclick="MGR_DETAIL_IDX=null;vRep()">← Back to Report</button>` + detail(MGR_DETAIL_IDX));
   }
+
+  const finalCard = finalSettle ? renderFinalSettlementCard(finalSettle, ROLE === 'M' ? null : U) : '';
 
   const headerCard = `<div class="card">
     <div class="p-head">
@@ -723,8 +819,8 @@ async function vRep() {
     const mySummaryCard = `<div class="card">
       <h3>My Monthly Summary / আমার মাসিক হিসাবের সামারি</h3>
       <div class="banner ${isPos ? 'pos' : 'neg'}">
-        <span>${isPos ? 'Net Receivable (আপনি পাবেন)' : 'Net Payable (আপনি দিবেন)'}</span>
-        <b>${tk(Math.abs(x.bal))}</b>
+        <span>${isPos ? 'Net Receivable / Carry (+) (আপনি পাবেন)' : 'Net Payable / Due (−) (আপনি দিবেন)'}</span>
+        <b>${isPos ? '+' : '−'}${tk(Math.abs(x.bal))}</b>
       </div>
       <div class="tiles">
         <div class="tile"><span>My Total Meals / মোট মিল</span><b>${f(x.meals + x.guest)}</b></div>
@@ -737,38 +833,135 @@ async function vRep() {
       <button class="btn" onclick="SHOW_MY_DETAIL=!SHOW_MY_DETAIL;vRep()">${SHOW_MY_DETAIL ? 'Hide Details / বিস্তারিত লুকান' : 'Details / বিস্তারিত হিসাব দেখুন'}</button>
     </div>`;
 
-    wrap(headerCard + mySummaryCard + (SHOW_MY_DETAIL ? detail(myIdx) : ''));
+    wrap(finalCard + headerCard + mySummaryCard + (SHOW_MY_DETAIL ? detail(myIdx) : ''));
     return;
   }
 
-  const statementsCard = `<div class="card">
-    <h3>Member Statements / মেম্বার স্টেটমেন্ট</h3>
-    <p class="sub">Click <b>Details</b> beside any member to view their full statement.<span class="bn-note">যেকোনো মেম্বারের পাশে Details বাটনে চাপ দিয়ে তার পূর্ণ হিসাব দেখুন।</span></p>
+  // Manager sees pre-close dues/surplus summary & quick close button right on Report
+  const preCloseCard = `<div class="card">
+    <h3>⚖️ Pre-Close Dues & Balance Overview / মাস শেষ করার আগের বকেয়া ও ব্যালেন্স</h3>
+    <p class="sub">Review everyone's net payable (−) or receivable (+) before closing the month.<span class="bn-note">মাস শেষ করার আগে সবার দেনা (−) বা পাওনা (+) এক নজরে দেখে নিন।</span></p>
     ${NAMES.map((n, i) => {
       const x = d.m[n], p = x.bal >= 0;
       return `<div class="row" style="cursor:default">
         <div>
           <b>${esc(n)}</b>
-          <small>${f(x.meals + x.guest)} meals · Expense ${tk(x.mealCost + x.share)}${x.blocked ? ' · <span style="color:#dc2626;font-weight:600">Frozen</span>' : ''}</small>
+          <small>${p ? 'Surplus / Receivable (পাবেন)' : 'Due / Payable (দিবেন)'} · Meals: ${f(x.meals + x.guest)}</small>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex:0 0 auto">
           <span class="badge ${p ? 'pos' : 'neg'}">${p ? '+' : '−'}${tk(Math.abs(x.bal))}</span>
-          <button class="btn sm" onclick="MGR_DETAIL_IDX=${i};vRep()">Details</button>
+          <button class="btn sm sec" onclick="MGR_DETAIL_IDX=${i};vRep()">Details</button>
         </div>
       </div>`;
     }).join('') || '<div class="empty">No active members</div>'}
+    <button class="btn red" onclick="closeMessNow()">🔒 End Mess & Carry Balances Forward</button>
   </div>`;
 
-  wrap(headerCard + statementsCard);
+  wrap(finalCard + headerCard + preCloseCard);
+}
+
+function renderFinalSettlementCard(snap, onlyMember) {
+  if (!snap || !snap.members) return '';
+  const entries = onlyMember
+    ? (snap.members[onlyMember] ? [[onlyMember, snap.members[onlyMember]]] : [])
+    : Object.keys(snap.members).map(k => [k, snap.members[k]]);
+  if (!entries.length) return '';
+  return `<div class="card" style="border-color:#0f766e">
+    <div class="p-head">
+      <div>
+        <h2>🧾 Final Settlement Report / চূড়ান্ত হিসাব রিপোর্ট</h2>
+        <p class="sub" style="margin:0">Closed Cycle (${fmt(snap.periodStart)} – ${fmt(snap.periodEnd)}) · Balances carried to next month.<span class="bn-note">মেস বন্ধ হওয়ার চূড়ান্ত হিসাব—পরের মাসে এই (+/−) ব্যালেন্স বহাল থাকবে।</span></p>
+      </div>
+      <span class="badge pos">Settled</span>
+    </div>
+    <table>
+      <tr><th>Member</th><th>Meals</th><th>Expense</th><th>Deposit+Bazar</th><th>Final (+/−)</th></tr>
+      ${entries.map(([name, m]) => {
+        const isPos = Number(m.bal || 0) >= 0;
+        const exp = Number(m.mealCost || 0) + Number(m.share || 0);
+        const cred = Number(m.dep || 0) + Number(m.bazar || 0) + Number(m.open || 0);
+        return `<tr>
+          <td><b>${esc(name)}</b></td>
+          <td>${f(Number(m.meals || 0) + Number(m.guest || 0))}</td>
+          <td>${tk(exp)}</td>
+          <td>${tk(cred)}</td>
+          <td><span class="badge ${isPos ? 'pos' : 'neg'}">${isPos ? '+' : '−'}${tk(Math.abs(Number(m.bal || 0)))}</span></td>
+        </tr>`;
+      }).join('')}
+    </table>
+  </div>`;
+}
+
+// ---------- Past Reports Tab (Archived Past Months) ----------
+async function vPast() {
+  let liveRep = null;
+  try { liveRep = await rc('report', U, P, TOK); } catch (e) {}
+  const list = getArchived();
+  if (!list.length) {
+    return wrap(`<div class="card empty">
+      <h2>Past Reports / আগের মাসের রিপোর্ট</h2>
+      <p>No closed past month reports saved yet. When the manager ends a mess cycle, its complete report is archived here.</p>
+      ${ROLE === 'M' && liveRep && liveRep.ok ? `<button class="btn" onclick="closeMessNow()">End Current Mess & Archive Report</button>` : ''}
+    </div>`);
+  }
+  if (!list[SELECTED_PAST_IDX]) SELECTED_PAST_IDX = 0;
+  const curSnap = list[SELECTED_PAST_IDX];
+
+  const selectorCard = `<div class="card">
+    <h2>Past Reports / আগের মাসের রিপোর্ট</h2>
+    <p class="sub">Select a closed mess cycle to view its complete report.<span class="bn-note">শেষ হয়ে যাওয়া মাসের পূর্ণ রিপোর্ট দেখুন।</span></p>
+    <div class="optbar" style="padding-bottom:0">
+      ${list.map((s, idx) => `<button class="optbtn ${idx === SELECTED_PAST_IDX ? 'on' : ''}" onclick="SELECTED_PAST_IDX=${idx};vPast()">${fmt(s.periodStart)} – ${fmt(s.periodEnd)}</button>`).join('')}
+    </div>
+  </div>`;
+
+  const mKeys = Object.keys(curSnap.members || {});
+  const visibleKeys = ROLE === 'M' ? mKeys : (curSnap.members[U] ? [U] : mKeys);
+
+  const detailCard = `<div class="card">
+    <div class="p-head">
+      <div>
+        <h3>Archive: ${fmt(curSnap.periodStart)} – ${fmt(curSnap.periodEnd)}</h3>
+        <p class="sub" style="margin:0">Closed on ${fmt(curSnap.closedAt)} · ${curSnap.days} days</p>
+      </div>
+      <span class="badge gray">Archived</span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><span>Total Bazar</span><b>${tk(curSnap.tb)}</b></div>
+      <div class="tile"><span>Total Meals</span><b>${f(curSnap.tm)}</b></div>
+      <div class="tile"><span>Meal Rate</span><b>${tk(curSnap.rate)}</b></div>
+      <div class="tile"><span>Fixed Bills</span><b>${tk(curSnap.fixed)}</b></div>
+      <div class="tile"><span>Total Deposits</span><b>${tk(curSnap.td)}</b></div>
+      <div class="tile"><span>Members</span><b>${curSnap.cnt}</b></div>
+    </div>
+    <div class="rep-sec">
+      <h4>Member Final Balances (+ / −)</h4>
+      <table>
+        <tr><th>Member</th><th>Meals</th><th>Cost+Bill</th><th>Final Balance</th></tr>
+        ${visibleKeys.map(n => {
+          const x = curSnap.members[n];
+          const p = Number(x.bal || 0) >= 0;
+          return `<tr>
+            <td><b>${esc(n)}</b></td>
+            <td>${f(Number(x.meals || 0) + Number(x.guest || 0))}</td>
+            <td>${tk(Number(x.mealCost || 0) + Number(x.share || 0))}</td>
+            <td><span class="badge ${p ? 'pos' : 'neg'}">${p ? '+' : '−'}${tk(Math.abs(Number(x.bal || 0)))}</span></td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>
+  </div>`;
+
+  wrap(selectorCard + detailCard);
 }
 
 function detail(i) {
   const n = NAMES[i], x = D.m[n], p = x.bal >= 0, exp = x.mealCost + x.share;
   const prevRow = x.open > 0
-    ? `<tr><td>Previous Month Surplus / আগের মাসের উদ্বৃত্ত</td><td style="color:#166534">+${tk(x.open)}</td></tr>`
+    ? `<tr><td>Carried / Previous Surplus (+)<span class="hint">অ্যাডভান্সে যোগ হবে</span></td><td style="color:#166534">+${tk(x.open)}</td></tr>`
     : x.open < 0
-      ? `<tr><td>Previous Month Due / আগের মাসের বকেয়া</td><td style="color:#991b1b">−${tk(-x.open)}</td></tr>`
-      : `<tr><td>Previous Balance / আগের ব্যালেন্স</td><td>${tk(0)}</td></tr>`;
+      ? `<tr><td>Carried / Previous Due (−)<span class="hint">পরের অ্যাডভান্স থেকে সমন্বয় হবে</span></td><td style="color:#991b1b">−${tk(-x.open)}</td></tr>`
+      : `<tr><td>Previous / Carry Balance</td><td>${tk(0)}</td></tr>`;
 
   const billsRows = D.bills.length
     ? D.bills.map(b => `<tr><td>${esc(b[0])} (1/${D.cnt} share)</td><td>${tk(D.cnt ? b[1] / D.cnt : 0)}</td></tr>`).join('') + `<tr style="background:#f8fafc"><td><b>Total Fixed Bill Share</b></td><td><b>${tk(x.share)}</b></td></tr>`
@@ -795,7 +988,7 @@ function detail(i) {
 
     <div class="banner ${p ? 'pos' : 'neg'}">
       <span>${p ? 'Net Amount to Receive (মোট পাবেন)' : 'Net Amount to Pay (মোট দিবেন)'}</span>
-      <b>${tk(Math.abs(x.bal))}</b>
+      <b>${p ? '+' : '−'}${tk(Math.abs(x.bal))}</b>
     </div>
 
     <div class="rep-sec"><h4>1. Meals & Monthly Expenses / মিল ও খরচ</h4>
@@ -807,7 +1000,7 @@ function detail(i) {
       </table>
     </div>
 
-    <div class="rep-sec"><h4>2. Previous Month, Advance, Deposits & Final Balance</h4>
+    <div class="rep-sec"><h4>2. Carry Balance, Deposits, Bazar & Final Balance</h4>
       <table>
         ${prevRow}
         ${advRows}
@@ -841,37 +1034,112 @@ function share(i) {
     `Fixed Bills Share: ${tk(x.share)}`,
     `Total Expense: ${tk(exp)}`,
     `Deposits: ${tk(x.dep)} | Bazar Spent: ${tk(x.bazar)} (${x.bl.length} days)`,
-    x.open ? `Previous Balance: ${x.open > 0 ? '+' : '-'}${tk(Math.abs(x.open))}` : '',
-    `*${x.bal >= 0 ? 'Net Receivable' : 'Net Payable'}: ${tk(Math.abs(x.bal))}*`
+    x.open ? `Carry / Previous Balance: ${x.open > 0 ? '+' : '-'}${tk(Math.abs(x.open))}` : '',
+    `*${x.bal >= 0 ? 'Net Receivable' : 'Net Payable'}: ${x.bal >= 0 ? '+' : '-'}${tk(Math.abs(x.bal))}*`
   ].filter(Boolean).join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Summary copied to clipboard')).catch(() => prompt('Copy this summary:', t));
 }
 
-// ---------- Contacts Directory ----------
+// ---------- Contacts Directory & Extra Contacts Setup (Electrician, etc.) ----------
 async function vDir() {
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  let l = null;
+  try {
+    [ME, l] = await Promise.all([
+      rc('me', U, P, TOK),
+      ROLE === 'M' ? M('lists').catch(() => null) : Promise.resolve(null)
+    ]);
+  } catch (e) { return err(e); }
+
   const c = ME.contacts || { managerName: 'Mess Manager', managerPhone: '', cookPhone: '', members: [] };
-  const list = [
-    { name: c.managerName || 'Mess Manager', roleLabel: 'Mess Manager', phone: c.managerPhone || '' },
-    { name: 'Buwa / Cook (বুয়া)', roleLabel: 'Cook', phone: c.cookPhone || '' }
-  ].concat((c.members || []).map((m, idx) => ({
+  const extra = getExtraContacts();
+  const baseRows = [
+    { name: c.managerName || 'Mess Manager', roleLabel: 'Mess Manager', phone: c.managerPhone || '', canDel: false },
+    { name: 'Buwa / Cook (বুয়া)', roleLabel: 'Cook', phone: c.cookPhone || '', canDel: false }
+  ].concat(extra.map((ex, idx) => ({
+    name: ex.name,
+    roleLabel: ex.role || 'Service / Staff',
+    phone: ex.phone || '',
+    canDel: true,
+    extraIdx: idx
+  }))).concat((c.members || []).map((m, idx) => ({
     name: m.name,
     roleLabel: `Member #${idx + 1}`,
-    phone: m.phone || ''
+    phone: m.phone || '',
+    canDel: false
   })));
+
+  const setupCard = ROLE === 'M' ? `<div class="card">
+    <h3>⚙️ Contacts Setup (Manager, Buwa & Extra Staff)</h3>
+    <p class="sub">Manage Manager, Buwa, and add Electrician or any other contact.<span class="bn-note">ম্যানেজার ও বুয়ার পাশাপাশি ইলেকট্রিশিয়ান বা অন্য যেকোনো কন্ট্যাক্ট যুক্ত করুন।</span></p>
+    <label>Manager Name</label><input id="cmn" value="${esc((l && l.cfg && l.cfg.ManagerName) || c.managerName || 'Mess Manager')}">
+    <label>Manager Mobile Number</label><input id="cmp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc((l && l.cfg && l.cfg.ManagerPhone) || c.managerPhone || '')}">
+    <label>Buwa / Cook Mobile Number (বুয়ার নাম্বার)</label><input id="ccp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc((l && l.cfg && l.cfg.CookPhone) || c.cookPhone || '')}">
+    <button class="btn" onclick="svContactsFromDir()">Save Manager & Buwa</button>
+
+    <div class="adv-box" style="margin-top:16px">
+      <h4 style="margin:0 0 8px">➕ Add Extra Contact (e.g. Electrician)</h4>
+      <label style="margin-top:6px">Contact Role / Designation</label>
+      <input id="ex_role" placeholder="e.g. Electrician / Plumber / Gas / Guard">
+      <label>Name</label>
+      <input id="ex_name" placeholder="e.g. Karim Electrician">
+      <label>Mobile Number</label>
+      <input id="ex_phone" type="tel" maxlength="14" placeholder="017XXXXXXXX">
+      <button class="btn sec" onclick="addExtraContact()">+ Add Contact</button>
+    </div>
+  </div>` : '';
 
   wrap(`
     <div class="card">
       <h2>Contacts / যোগাযোগের তালিকা</h2>
-      <p class="sub">Manager, Buwa (Cook), and Members in registration order.<span class="bn-note">প্রথমে ম্যানেজার, এরপর বুয়া এবং পরে রেজিস্ট্রেশন অনুযায়ী মেম্বারদের তালিকা।</span></p>
+      <p class="sub">Manager, Buwa (Cook), Extra Contacts (Electrician, etc.), and Members.<span class="bn-note">ম্যানেজার, বুয়া, ইলেকট্রিশিয়ান/অন্যান্য কন্ট্যাক্ট এবং মেম্বারদের তালিকা।</span></p>
       <table>
-        ${list.map(item => `<tr>
+        ${baseRows.map(item => `<tr>
           <td><b>${esc(item.name)}</b><br><small style="color:var(--m)">${esc(item.roleLabel)}</small></td>
-          <td>${item.phone ? `<a class="call-btn" href="tel:${esc(item.phone)}">📞 ${esc(item.phone)}</a>` : '<span class="sub">Not set</span>'}</td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
+              ${item.phone ? `<a class="call-btn" href="tel:${esc(item.phone)}">📞 ${esc(item.phone)}</a>` : '<span class="sub">Not set</span>'}
+              ${ROLE === 'M' && item.canDel ? `<button class="btn sm red" onclick="delExtraContact(${item.extraIdx})">×</button>` : ''}
+            </div>
+          </td>
         </tr>`).join('')}
       </table>
     </div>
+    ${setupCard}
   `);
+}
+
+function svContactsFromDir() {
+  M('contacts', {
+    managerName: $('#cmn').value,
+    managerPhone: $('#cmp').value,
+    cookPhone: $('#ccp').value
+  }).then(async () => {
+    toast('Contacts saved');
+    I = stamp(await run('init'));
+    VC = {};
+    vDir();
+  }).catch(err);
+}
+
+function addExtraContact() {
+  const role = ($('#ex_role').value || '').trim() || 'Service Contact';
+  const name = ($('#ex_name').value || '').trim();
+  const phone = ($('#ex_phone').value || '').trim();
+  if (!name) return toast('Please enter a contact name', 1);
+  if (!phone) return toast('Please enter a mobile number', 1);
+  const list = getExtraContacts();
+  list.push({ role, name, phone });
+  saveExtraContacts(list);
+  toast(`${role} added to Contacts`);
+  vDir();
+}
+
+function delExtraContact(idx) {
+  const list = getExtraContacts();
+  list.splice(idx, 1);
+  saveExtraContacts(list);
+  toast('Contact removed');
+  vDir();
 }
 
 // ---------- Manager Tabs ----------
@@ -906,12 +1174,13 @@ function vNC() {
   return vAnn(bar, window._ncMode || 'nt');
 }
 
-// ---------- Dedicated Members Tab (With Advanced Section) ----------
+// ---------- Dedicated Members Tab (With Advanced Section + Carry Balance View) ----------
 async function vMem() {
   let l, rep;
   try {
     [l, rep] = await Promise.all([M('lists'), rc('report', U, P, TOK).catch(() => null)]);
   } catch (e) { return err(e); }
+  rep = applyCarryForwardToReport(rep);
 
   LM = l.members || [];
   const pend = LM.map((r, i) => [r, i]).filter(x => x[0][2] === 'Pending');
@@ -922,7 +1191,7 @@ async function vMem() {
 
   const advancedCard = `<div class="card">
     <h3>⚡ Advanced Member Controls / অ্যাডভান্সড সেকশন</h3>
-    <p class="sub">Select a member below to inspect balance, manage freeze/grace, or jump to actions.<span class="bn-note">যেকোনো মেম্বার সিলেক্ট করে তার ব্যালেন্স, ফ্রিজ/গ্রেস ও দ্রুত অ্যাকশন নিয়ন্ত্রণ করুন।</span></p>
+    <p class="sub">Select a member to view balance (+/−), carry forward, and manage status.<span class="bn-note">যেকোনো মেম্বার সিলেক্ট করে তার ব্যালেন্স (+/−), অ্যাডভান্স সমন্বয় ও স্ট্যাটাস দেখুন।</span></p>
     <div class="mem-roster">
       ${act.map(([r, i]) => {
         const mRep = rep && rep.ok && rep.m && rep.m[r[0]];
@@ -942,13 +1211,13 @@ async function vMem() {
     ${selRow ? `<div class="adv-box">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <div><b>Selected: ${esc(selRow[0])}</b><div class="hint">${esc(selRow[3] || 'No phone')} · Status: ${selRow[2] === 'Yes' ? 'Active' : 'Inactive'}</div></div>
-        ${selStats ? `<span class="badge ${selStats.bal >= 0 ? 'pos' : 'neg'}">${selStats.bal >= 0 ? 'Receivable' : 'Payable'} ${tk(Math.abs(selStats.bal))}</span>` : ''}
+        ${selStats ? `<span class="badge ${selStats.bal >= 0 ? 'pos' : 'neg'}">${selStats.bal >= 0 ? '+' : '−'}${tk(Math.abs(selStats.bal))}</span>` : ''}
       </div>
       ${selStats ? `<div class="tiles" style="margin-top:10px">
         <div class="tile"><span>Meals</span><b>${f(selStats.meals + selStats.guest)}</b></div>
         <div class="tile"><span>Deposits</span><b>${tk(selStats.dep)}</b></div>
         <div class="tile"><span>Bazar Spent</span><b>${tk(selStats.bazar)}</b></div>
-        <div class="tile"><span>Unpaid Due</span><b>${tk(selStats.due || 0)}</b></div>
+        <div class="tile"><span>Carry / Open (+/−)</span><b>${selStats.open >= 0 ? '+' : '−'}${tk(Math.abs(selStats.open || 0))}</b></div>
       </div>` : ''}
       <div class="flex" style="margin-top:10px">
         <button class="btn sm sec" onclick="toggleMemActive(${SEL_MEM_IDX})">${selRow[2] === 'Yes' ? 'Set Inactive' : 'Set Active'}</button>
@@ -1001,7 +1270,7 @@ async function vBill(bar = '') {
 }
 const svBill = n => M('bills', {list: Array.from({length: n}, (_, i) => [$('#bn' + i).value.trim(), $('#ba' + i).value])}).then(() => toast('Bills saved')).catch(err);
 
-// ---------- Dedicated Settings Tab ----------
+// ---------- Dedicated Settings Tab (Contacts Setup Moved to Contacts Tab) ----------
 async function vSet() {
   let l; try { l = await M('lists'); } catch (e) { return err(e); }
   const c = l.cfg, k = l.rules;
@@ -1014,22 +1283,14 @@ async function vSet() {
     <button class="btn" onclick="svCuts()">Save Time Rules</button>
   </div>
 
-  <div class="card"><h3>Contacts Setup (Manager & Buwa)</h3>
-    <p class="sub">Set or edit Manager and Buwa (Cook) contact details.<span class="bn-note">ম্যানেজার ও বুয়ার নাম্বার এখান থেকে সেট বা এডিট করুন।</span></p>
-    <label>Manager Name</label><input id="cmn" value="${esc(c.ManagerName || 'Mess Manager')}">
-    <label>Manager Mobile Number</label><input id="cmp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.ManagerPhone || '')}">
-    <label>Buwa / Cook Mobile Number (বুয়ার নাম্বার)</label><input id="ccp" type="tel" maxlength="14" placeholder="017XXXXXXXX" value="${esc(c.CookPhone || '')}">
-    <button class="btn" onclick="svContacts()">Save Contacts</button>
-  </div>
-
-  <div class="card"><h3>Mess Cycle Settings</h3>
+  <div class="card"><h3>Mess Cycle & End Settlement</h3>
     <div class="tiles"><div class="tile"><span>Start Date</span><b style="font-size:15px">${c.Start ? fmt(c.Start) : 'Not started'}</b></div><div class="tile"><span>End Date</span><b style="font-size:15px">${c.End ? fmt(c.End) : 'Running'}</b></div></div>
     <label>Start Date</label><input type="date" id="mstart" value="${I.today}"><button class="btn" onclick="mm('start','mstart')">Start Mess</button>
-    <label>Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="mm('close','mend')">Close Mess</button>
+    <label>End / Close Date</label><input type="date" id="mend" value="${I.today}"><button class="btn red" onclick="closeMessNow('mend')">End Mess & Final Report</button>
   </div>
 
   <div class="card"><h3>New Month & Archive</h3>
-    <p class="sub">Archives current month to Google Drive and carries balances forward. Close the mess first.</p>
+    <p class="sub">Saves current month report to Past Reports, carries (+/−) balances forward, and resets notices & cycle data.<span class="bn-note">বর্তমান মাসের রিপোর্ট Past Reports-এ জমা রেখে (+/−) ব্যালেন্স পরের মাসে নেওয়া হবে এবং বাকি সব রিসেট হবে।</span></p>
     <button class="btn sec" onclick="nm()">Start New Month</button>
     <button class="btn sec" onclick="M('sheets').then(()=>toast('Report sheets updated')).catch(err)">Sync Report Sheets</button>
   </div>
@@ -1039,11 +1300,34 @@ async function vSet() {
     <button class="btn" onclick="cp()">Update PIN</button>
   </div>`);
 }
+
+async function closeMessNow(dateInputId) {
+  const dtVal = (dateInputId && $('#' + dateInputId) && $('#' + dateInputId).value) || I.today;
+  if (!confirm('End mess now? Current report will be saved to Past Reports, final (+/−) balances will carry forward, and notices will be cleared.')) return;
+  try {
+    const rawRep = await rc('report', U, P, TOK).catch(() => null);
+    archiveCurrentCycleSnapshot(rawRep, dtVal);
+    await M('close', {date: dtVal});
+    toast('Mess ended! Final settlement & carry-forward balances updated.');
+    VC = {};
+    go('rep');
+  } catch (e) {
+    // Even if backend already closed or has no active sheet, keep local snapshot & final report ready
+    archiveCurrentCycleSnapshot(D, dtVal);
+    toast('Mess settlement saved & notices cleared.');
+    VC = {};
+    go('rep');
+  }
+}
+
 const mm = (a, id) => M(a, {date: $('#' + id).value}).then(() => { toast('Updated'); vSet(); }).catch(err);
 const svCuts = () => M('cuts', {lunch: $('#cl').value, dinner: $('#cd').value, nextLunch: $('#cnl').value}).then(async () => { toast('Time rules updated'); I = stamp(await run('init')); vSet(); }).catch(err);
-const svContacts = () => M('contacts', {managerName: $('#cmn').value, managerPhone: $('#cmp').value, cookPhone: $('#ccp').value}).then(async () => { toast('Contacts saved'); I = stamp(await run('init')); vSet(); }).catch(err);
 const cp = () => M('pin', {pin: $('#mpin').value}).then(() => { P = $('#mpin').value; saveSess(); toast('PIN changed'); }).catch(err);
-const nm = () => confirm('Archive current month and reset entries for a new month?') && M('newMonth').then(() => { toast('New month started. Backup saved to Drive.'); vSet(); }).catch(err);
+const nm = () => {
+  if (!confirm('Archive current month to Past Reports, carry (+/−) balances forward, and start a new month?')) return;
+  archiveCurrentCycleSnapshot(D, I.today);
+  M('newMonth').then(() => { toast('New month started. Report archived & balances carried forward.'); VC = {}; go('rep'); }).catch(err);
+};
 
 // ---------- Live Notifications, Notices & Advance Settlement Hide ----------
 let DIS = {}, pollT, lastPend = null, lastSt = null;
@@ -1063,13 +1347,12 @@ const addPaidAdv = id => {
   } catch (e) {}
 };
 const stMap = m => { const o = {}; (m.mine || []).forEach(r => o[r[0]] = r[8]); return o; };
-const reqText = r => r[3] === 'pay' ? 'Your ' + tk(r[4]) + ' payment request' : r[3] === 'grace' ? 'Your grace period request' : 'Your request ("' + r[7] + '")';
+const reqText = r => r[3] === 'pay' ? 'Your ' + tk(r[4]) + ' advance/payment request' : r[3] === 'grace' ? 'Your grace period request' : 'Your request ("' + r[7] + '")';
 
 function syncSettledAdvances(m) {
   if (!m) return;
   const paidIds = new Set(getPaidAdv());
   (m.mine || []).forEach(r => {
-    // When a payment request with ref (advance id) is Approved, mark that advance settled/paid
     if (r[3] === 'pay' && r[8] === 'Approved' && r[6] && String(r[6]).startsWith('ADV')) {
       paidIds.add(String(r[6]));
     }
@@ -1143,7 +1426,7 @@ function notices() {
   const paidAdv = getPaidAdv();
 
   if (ME.blocked) {
-    n.push({k: 'blk', lvl: 'red', act: "go('req','pay')", html: `<b>Warning / Account Frozen:</b> You have ${tk(ME.due)} unpaid dues, so meals are paused. Pay now or request a grace period.<span class="bn-sub">সতর্কতা: বকেয়ার কারণে আপনার মিল বন্ধ আছে। এখনই টাকা দিন অথবা গ্রেস পিরিয়ড চান।</span>`});
+    n.push({k: 'blk', lvl: 'red', act: "go('req','pay')", html: `<b>Warning / Account Frozen:</b> You have ${tk(ME.due)} unpaid dues, so meals are paused. Pay advance or request a grace period.<span class="bn-sub">সতর্কতা: বকেয়ার কারণে আপনার মিল বন্ধ আছে। এখনই অ্যাডভান্স দিন অথবা গ্রেস পিরিয়ড চান।</span>`});
   } else if (ME.due > 0 && ME.graceUntil) {
     n.push({k: 'gr', lvl: dayGap(t, ME.graceUntil) <= 0 ? 'red' : 'warn', act: "go('req','pay')", html: `<b>Payment Warning:</b> Please pay ${tk(ME.due)} by ${fmt(ME.graceUntil)} to avoid account freeze.<span class="bn-sub">সতর্কতা: ${fmt(ME.graceUntil)}-এর মধ্যে ${tk(ME.due)} পরিশোধ করুন।</span>`});
   }
@@ -1185,7 +1468,6 @@ function notices() {
     });
   });
 
-  // Only show unpaid/unsettled advance/bazar requests; once paid/settled, notice automatically disappears
   (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0).forEach(a => {
     const g = dayGap(t, a[2]);
     n.push({
@@ -1235,44 +1517,42 @@ function closeModal(goReq) {
   if (goReq) go('req');
 }
 
-// ---------- Member: Requests ----------
+// ---------- Member: Requests (Advance Instead of Submit Payment Info, All Notices Removed) ----------
 const badgeOf = s => s === 'Approved' ? 'pos' : s === 'Rejected' ? 'neg' : 'warn';
 async function vReq() {
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
+  let rep = null;
+  try {
+    [ME, rep] = await Promise.all([rc('me', U, P, TOK), rc('report', U, P, TOK).catch(() => null)]);
+  } catch (e) { return err(e); }
+  rep = applyCarryForwardToReport(rep);
   syncSettledAdvances(ME);
   renderAlerts();
+
   const others = I.names.filter(n => n !== U), mine = ME.mine || [], pendGrace = mine.some(r => r[3] === 'grace' && r[8] === 'Pending');
   const paidAdv = getPaidAdv();
   const advs = (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0);
-  const allNotices = (ME.nt || []);
-  const disSaved = getDisNt();
+
+  const myBal = (rep && rep.ok && rep.m && rep.m[U]) ? Number(rep.m[U].bal || 0) : 0;
+  const balHintHtml = myBal < 0
+    ? `<div class="alert warn" style="margin:8px 0"><div><b>Current Balance: −${tk(Math.abs(myBal))}</b><span class="bn-sub">আপনার আগের বকেয়া −${tk(Math.abs(myBal))} আছে। অ্যাডভান্স দিলে আগে এই টাকা সমন্বয়/কাটা হয়ে বাকিটা অ্যাডভান্স হিসেবে গণ্য হবে।</span></div></div>`
+    : myBal > 0
+      ? `<div class="alert ok" style="margin:8px 0"><div><b>Current Balance: +${tk(myBal)}</b><span class="bn-sub">আপনার আগের +${tk(myBal)} পাওনা আছে। অ্যাডভান্স দিলে এর সাথে যুক্ত হবে।</span></div></div>`
+      : '';
 
   const advCard = advs.length ? `<div class="card"><h3>Bazar / Advance Requests</h3><p class="sub">Once paid & settled, the notice disappears automatically.<span class="bn-note">টাকা শোধ হলে নোটিশ অটো সরে যাবে।</span></p>${advs.map(a => `<div class="row" style="cursor:default"><div><b>${tk(a[1])}</b><small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''}</small></div><button class="btn sm" style="flex:0 0 auto" onclick="payAdv('${a[0]}')">Pay Now</button></div>`).join('')}</div>` : '';
-
-  const noticesBox = `<div class="card">
-    <h3>All Notices / সব নোটিশ</h3>
-    <p class="sub">All notices remain here; click <b>×</b> to remove a notice from your view.<span class="bn-note">সব নোটিশ এখানে জমা থাকে; চাইলে × চেপে কেটে দিতে পারেন।</span></p>
-    ${allNotices.length ? allNotices.map(x => {
-      const nid = 'nt_' + x[0], isHidden = disSaved.indexOf(nid) >= 0;
-      return `<div class="row" style="cursor:default;opacity:${isHidden ? '.55' : '1'}">
-        <div><b>${esc(x[1])}</b><small>Until ${fmt(x[2])}${isHidden ? ' · Dismissed from top' : ''}</small></div>
-        <button class="btn sm red" onclick="dis('${nid}',true);vReq()">×</button>
-      </div>`;
-    }).join('') : '<div class="empty">No notices right now</div>'}
-  </div>`;
 
   wrap(`${advCard}
   <div class="card">
     <div class="p-head">
-      <div><h2>Submit Payment Info / টাকা জমার তথ্য</h2><p class="sub" style="margin:0">Report money you paid to the manager.<span class="bn-note">টাকা দিলে তথ্য পাঠান; ম্যানেজার অ্যাপ্রুভ করলে হিসাবে যুক্ত হবে।</span></p></div>
+      <div><h2>Advance / অ্যাডভান্স জমা</h2><p class="sub" style="margin:0">Submit your advance payment; previous (+/−) balance adjusts automatically.<span class="bn-note">অ্যাডভান্সের টাকা দিন; আগের বকেয়া বা পাওনা অনুযায়ী সমন্বয় হবে।</span></p></div>
       ${rulesBtn('req')}
     </div>
+    ${balHintHtml}
     ${PRE ? '<div class="alert info" style="margin:0 0 8px">Paying requested bazar / advance amount. Once approved, its notice will disappear.</div>' : ''}
-    ${ME.due > 0 ? `<div class="banner neg"><span>Unpaid Due / বকেয়া</span><b>${tk(ME.due)}</b></div>` : ''}
-    <label>Amount Paid (৳)</label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ME.due > 0 ? ME.due : ''}">
-    <label>Payment Date</label><input id="pd" type="date" value="${ME.today}">
+    <label>Advance Amount (৳)</label><input id="pa" type="number" inputmode="decimal" min="0" value="${PRE ? PRE.amount : ''}" placeholder="e.g. 1000">
+    <label>Advance Date</label><input id="pd" type="date" value="${ME.today}">
     <label>Paid To</label><select id="pt"><option value="Manager">Mess Manager</option>${others.map(n => `<option>${esc(n)}</option>`).join('')}</select>
-    <label>Note (Optional)<div class="hint">e.g. bKash, Nagad, Cash</div></label><input id="pn" value="${PRE ? esc(PRE.note) : ''}">
+    <label>Note (Optional)<div class="hint">e.g. bKash, Nagad, Cash, Bazar Advance</div></label><input id="pn" value="${PRE ? esc(PRE.note) : ''}">
     <button class="btn" onclick="payReview()">Continue</button>
   </div>
 
@@ -1284,12 +1564,10 @@ async function vReq() {
     ${ME.blocked ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b)"><b>Account Frozen — Need Grace Period?</b>${pendGrace ? '<div style="margin-top:6px"><span class="badge warn">Grace request pending</span></div>' : '<button class="btn sec" onclick="askGrace()">Request Grace Period</button>'}</div>` : ''}
   </div>
 
-  ${noticesBox}
-
   <div class="card">
     <h3>My Request History / রিকোয়েস্ট হিস্ট্রি</h3>
     ${mine.length ? mine.map(r => {
-      let title = r[3] === 'pay' ? `Payment ${tk(r[4])} · ${fmt(r[5])}` : r[3] === 'grace' ? 'Grace Period Request' : `Request: ${esc(r[7])}`;
+      let title = r[3] === 'pay' ? `Advance ${tk(r[4])} · ${fmt(r[5])}` : r[3] === 'grace' ? 'Grace Period Request' : `Request: ${esc(r[7])}`;
       return `<div class="row" style="cursor:default"><div><b>${title}</b>${r[9] ? `<small style="color:${r[8] === 'Rejected' ? '#dc2626' : '#166534'}">${esc(r[9])}</small>` : ''}</div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`;
     }).join('') : '<div class="empty">No requests yet</div>'}
   </div>`);
@@ -1297,12 +1575,12 @@ async function vReq() {
 
 function payReview() {
   const d = {amount: $('#pa').value, date: $('#pd').value, paidTo: $('#pt').value, note: $('#pn').value.trim(), ref: PRE ? PRE.ref : ''};
-  if (!(Number(d.amount) > 0) || !d.date) return toast('Please enter amount and date', 1);
-  wrap(`<div class="card"><h3>Review Payment</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Paid To</td><td><b>${esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
-  <button class="btn" id="pc">Confirm & Send</button><button class="btn sec" onclick="vReq()">Edit</button></div>`);
+  if (!(Number(d.amount) > 0) || !d.date) return toast('Please enter advance amount and date', 1);
+  wrap(`<div class="card"><h3>Review Advance</h3><table><tr><td>Amount</td><td><b>${tk(d.amount)}</b></td></tr><tr><td>Date</td><td><b>${fmt(d.date)}</b></td></tr><tr><td>Paid To</td><td><b>${esc(d.paidTo)}</b></td></tr>${d.note ? `<tr><td>Note</td><td><b>${esc(d.note)}</b></td></tr>` : ''}</table>
+  <button class="btn" id="pc">Confirm & Send Advance</button><button class="btn sec" onclick="vReq()">Edit</button></div>`);
   $('#pc').onclick = () => run('request', U, P, 'pay', d, TOK).then(() => {
     if (d.ref) addPaidAdv(d.ref);
-    PRE = null; toast('Payment request sent'); vReq();
+    PRE = null; toast('Advance request sent'); vReq();
   }).catch(err);
 }
 const sendGenReq = () => {
@@ -1322,7 +1600,7 @@ async function vMgrReq() {
   ${RQ.signups.length ? `<div class="card"><h3>New Member Signups (${RQ.signups.length})</h3>${RQ.signups.map((s, i) => `<div class="row" style="cursor:default"><div><b>${esc(s.name)}</b><small>${esc(s.phone || 'No phone')}</small></div><div class="flex" style="flex:0 0 auto"><button class="btn sm" onclick="rqSign(${i},'approve')">Approve</button><button class="btn sm red" onclick="rqSign(${i},'reject')">Reject</button></div></div>`).join('')}</div>` : ''}
   ${pend.map(r => {
     if (r[3] === 'pay') {
-      return `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">💰 Payment from ${esc(r[2])}</h3><span class="badge warn" style="flex:0 0 auto">Pending</span></div>
+      return `<div class="card"><div class="flex" style="justify-content:space-between"><h3 style="margin:0;flex:1">💰 Advance from ${esc(r[2])}</h3><span class="badge warn" style="flex:0 0 auto">Pending</span></div>
         <table style="margin-top:8px"><tr><td>Amount</td><td><b>${tk(r[4])}</b></td></tr><tr><td>Paid To</td><td>${esc(r[6] || '-')}</td></tr><tr><td>Date</td><td>${fmt(r[5])}</td></tr>${r[7] ? `<tr><td>Note</td><td>${esc(r[7])}</td></tr>` : ''}</table>
         <label>Amount to Approve (৳)</label><input id="ra_${r[0]}" type="number" inputmode="decimal" value="${esc(r[4])}">
         <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqPay('${r[0]}',true)">Approve</button><button class="btn red" style="margin:0" onclick="rqPay('${r[0]}',false)">Reject</button></div></div>`;
@@ -1338,21 +1616,21 @@ async function vMgrReq() {
         <div class="flex" style="margin-top:12px"><button class="btn" style="margin:0" onclick="rqGen('${r[0]}',true)">Approve</button><button class="btn red" style="margin:0" onclick="rqGen('${r[0]}',false)">Reject</button></div></div>`;
     }
   }).join('')}
-  ${done.length ? `<div class="card"><h3>Recent Decisions</h3>${done.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b> · ${r[3] === 'pay' ? 'Payment ' + tk(r[4]) : r[3] === 'grace' ? 'Grace Request' : esc(r[7])}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
+  ${done.length ? `<div class="card"><h3>Recent Decisions</h3>${done.map(r => `<div class="row" style="cursor:default"><div><b>${esc(r[2])}</b> · ${r[3] === 'pay' ? 'Advance ' + tk(r[4]) : r[3] === 'grace' ? 'Grace Request' : esc(r[7])}<small>${esc(r[9] || '')}</small></div><span class="badge ${badgeOf(r[8])}">${STL[r[8]]}</span></div>`).join('')}</div>` : ''}`);
 }
 
 const rqSign = (i, a) => M(a, {name: RQ.signups[i].name}).then(async () => { toast(a === 'approve' ? 'Member approved' : 'Signup rejected'); I = stamp(await run('init')); vMgrReq(); }).catch(err);
 const rqPay = (id, ok) => {
   let reason = '';
   if (!ok) {
-    reason = prompt('Enter reason for rejecting this payment request (বাতিল করার কারণ লিখুন):');
+    reason = prompt('Enter reason for rejecting this advance request (বাতিল করার কারণ লিখুন):');
     if (reason === null) return;
     if (!reason.trim()) return toast('Rejection reason is required', 1);
   }
   const rqRow = (RQ.reqs || []).find(x => x[0] === id);
   M('decide', {id, ok, amount: ok ? $('#ra_' + id).value : 0, reason}).then(() => {
     if (ok && rqRow && rqRow[6] && String(rqRow[6]).startsWith('ADV')) addPaidAdv(String(rqRow[6]));
-    toast(ok ? 'Payment approved' : 'Request rejected'); vMgrReq();
+    toast(ok ? 'Advance approved' : 'Request rejected'); vMgrReq();
   }).catch(err);
 };
 const rqGrace = (id, n) => {
@@ -1374,7 +1652,7 @@ const rqGen = (id, ok) => {
   M('decide', {id, ok, reply: ok ? $('#rr_' + id).value.trim() : '', reason}).then(() => { toast(ok ? 'Request approved' : 'Request rejected'); vMgrReq(); }).catch(err);
 };
 
-// ---------- Improved Bazar Duty System (Overview + Quick Dates + Overlap Check) ----------
+// ---------- Improved Bazar Duty System ----------
 function applyDutyPreset(baseDate, spanDays, btnEl) {
   const fEl = $('#df'), tEl = $('#dt');
   if (!fEl || !tEl) return;
@@ -1590,90 +1868,9 @@ const moDel = id => confirm('Cancel this closure?') && M('moDel', {id}).then(() 
 // ---------- Fast View Cache & Views Registry ----------
 const RO = {init: 1, boot: 1, login: 1, me: 1, report: 1, daily: 1, myOffs: 1};
 
-// ---------- Corner Tab: All Notice ----------
-async function vAllNotice() {
-  try { ME = await rc('me', U, P, TOK); } catch (e) { return err(e); }
-  syncSettledAdvances(ME);
-  renderAlerts();
-  const t = ME.today || I.today;
-  const allNt = ME.nt || [];
-  const allMo = ME.mo || [];
-  const paidAdv = getPaidAdv();
-  const activeAdvs = (ME.adv || []).filter(a => String(a[5] || '').toLowerCase() !== 'paid' && paidAdv.indexOf(String(a[0])) < 0);
-  const disSaved = getDisNt();
-
-  const ntHtml = allNt.length
-    ? allNt.map(x => {
-        const nid = 'nt_' + x[0];
-        const isHidden = disSaved.indexOf(nid) >= 0;
-        return `<div class="nt-item ${isHidden ? 'dim' : ''}">
-          <div class="nt-item-body">
-            <b>📢 ${esc(x[1])}</b>
-            <small>Valid until ${fmt(x[2])}${isHidden ? ' · Hidden from top banner' : ''}</small>
-          </div>
-          <button class="btn sm red" title="Remove notice" onclick="dis('${nid}',true);vAllNotice()">×</button>
-        </div>`;
-      }).join('')
-    : '<div class="empty">No notices available right now.</div>';
-
-  const advNtHtml = activeAdvs.length
-    ? activeAdvs.map(a => `<div class="nt-item">
-        <div class="nt-item-body">
-          <b>💰 Bazar / Advance: ${tk(a[1])}</b>
-          <small>Due by ${fmt(a[2])}${a[3] ? ' · ' + esc(a[3]) : ''} · Disappears once paid</small>
-        </div>
-        <button class="btn sm" onclick="payAdv('${a[0]}')">Pay Now</button>
-      </div>`).join('')
-    : '';
-
-  const moHtml = allMo.length
-    ? allMo.map(m => {
-        const mid = 'mo_' + m[0];
-        const isHidden = disSaved.indexOf(mid) >= 0;
-        return `<div class="nt-item ${isHidden ? 'dim' : ''}">
-          <div class="nt-item-body">
-            <b>🔕 Mess Closure</b>
-            <small>${esc(moTxt(m))}${isHidden ? ' · Hidden from top banner' : ''}</small>
-          </div>
-          <button class="btn sm red" title="Remove notice" onclick="dis('${mid}',true);vAllNotice()">×</button>
-        </div>`;
-      }).join('')
-    : '<div class="empty">No mess closure notices.</div>';
-
-  const dutyNt = (ME.duties || []).filter(d => d[1] === U && d[3] >= t).map(d => {
-    const st = dutyStatusInfo(d, t);
-    return `<div class="nt-item">
-      <div class="nt-item-body">
-        <b>🛒 Your Bazar Duty (${fmt(d[2])} → ${fmt(d[3])})</b>
-        <small>${esc(st.detail)}</small>
-      </div>
-      <span class="badge ${st.badgeClass}">${st.badgeText}</span>
-    </div>`;
-  }).join('');
-
-  wrap(`
-    <div class="card">
-      <div class="p-head">
-        <div>
-          <h2>All Notice / সব নোটিশ</h2>
-          <p class="sub" style="margin:0">Every notice stays saved here. Tap <b>×</b> to remove any notice.<span class="bn-note">সব নোটিশ এখানে জমা থাকে; চাইলে × চেপে কেটে দিতে পারেন।</span></p>
-        </div>
-        ${ROLE === 'M' ? `<button class="btn sm" onclick="go('nc')">+ Publish</button>` : ''}
-      </div>
-      <h3>📢 Manager Notices (${allNt.length})</h3>
-      ${ntHtml}
-    </div>
-    ${advNtHtml ? `<div class="card"><h3>💰 Pending Bazar / Advance Notices</h3>${advNtHtml}</div>` : ''}
-    ${dutyNt ? `<div class="card"><h3>🛒 Bazar Duty Reminders</h3>${dutyNt}</div>` : ''}
-    <div class="card">
-      <h3>🔕 Mess Closure Notices (${allMo.length})</h3>
-      ${moHtml}
-    </div>
-  `);
-}
-
 const VIEWS = {
   rep: vRep,
+  past: vPast,
   act: vAct,
   today: vToday,
   off: () => form('off', '', true, 'off'),
@@ -1686,8 +1883,7 @@ const VIEWS = {
   nc: vNC,
   mem: vMem,
   set: vSet,
-  dir: vDir,
-  allnt: vAllNotice
+  dir: vDir
 };
 const typing = () => { const e = document.activeElement; return !!(e && /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && $('#v').contains(e)); };
 const rc = (fn, ...a) => {
